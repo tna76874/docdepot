@@ -1,0 +1,6 @@
+Flask==3.0.0
+flask_restful==0.3.10
+SQLAlchemy==2.0.25
+gunicorn==21.2.0
+Jinja2==3.1.2
+MarkupSafe==2.1.3
