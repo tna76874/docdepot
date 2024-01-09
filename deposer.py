@@ -90,9 +90,12 @@ def get_documents(token):
         document = db.get_document_from_token(token)
         if document:
             current_time = datetime.utcnow()
-            db.add_event(token)
-            file_path = f'{documentdir}/{document["did"]}'
-            return send_file(file_path, as_attachment=False, download_name=document["filename"])
+            if document['valid_until'] >= current_time:
+                db.add_event(token)
+                file_path = f'{documentdir}/{document["did"]}'
+                return send_file(file_path, as_attachment=False, download_name=document["filename"])
+            else:
+                return render_template('token_expired.html', expired=document['valid_until'].strftime('%Y-%m-%d %H:%M:%S'))
         else:
             return {"error": "Document not found"}, 404
     except Exception as e:
@@ -122,6 +125,29 @@ def render_index(token):
             return jsonify({"error": "Document not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/')
+def empty_page():
+    """
+    Return an empty page.
+
+    Returns:
+    - Empty HTML page.
+    """
+    return ''
+
+@app.errorhandler(Exception)
+def handle_error(error):
+    """
+    Handle errors and return a JSON response.
+
+    Parameters:
+    - error: The caught exception.
+
+    Returns:
+    - JSON response with error information.
+    """
+    return jsonify({"error": str(error)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
