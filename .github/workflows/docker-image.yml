@@ -1,0 +1,55 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - stable
+  pull_request:
+    branches:
+      - master
+      - main
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: 'Login to GitHub Container Registry'
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{github.actor}}
+        password: ${{secrets.GITHUB_TOKEN}}
+
+    - name: Build the Docker image
+      run: |
+          COMMIT_HASH=$(git rev-parse HEAD)
+          CURRENT_DATE=$(date +'%Y%m%d')
+          CURRENT_DATE_WITH_HOUR=$(date +'%Y%m%d%H')
+          IMAGE_NAME="ghcr.io/${{ github.repository }}"
+
+          # Build image for master branch
+          if [ ${{ github.ref }} == 'refs/heads/master' ] || [ ${{ github.ref }} == 'refs/heads/main' ]; then
+            CHANNEL="latest"
+          fi
+
+          # Build image for stable branch
+          if [ ${{ github.ref }} == 'refs/heads/stable' ]; then
+            CHANNEL="stable"
+            docker build . --file Dockerfile --tag ${IMAGE_NAME}:${CHANNEL}-${CURRENT_DATE}
+            docker push ${IMAGE_NAME}:${CHANNEL}-${CURRENT_DATE}
+            docker build . --file Dockerfile --tag ${IMAGE_NAME}:${CHANNEL}-${CURRENT_DATE_WITH_HOUR}
+            docker push ${IMAGE_NAME}:${CHANNEL}-${CURRENT_DATE_WITH_HOUR}
+          fi
+
+          docker build . --file Dockerfile --tag ${IMAGE_NAME}:${COMMIT_HASH}
+          docker push ${IMAGE_NAME}:${COMMIT_HASH}
+
+          docker build . --file Dockerfile --tag ${IMAGE_NAME}:${CHANNEL}
+          docker push ${IMAGE_NAME}:${CHANNEL}
