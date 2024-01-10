@@ -230,16 +230,14 @@ def render_index(token):
         document = db.get_document_from_token(token)
         if document:
             current_time = datetime.utcnow()
-            if document['valid_until'] >= current_time:
-                count = db.get_download_event_count(token)
-                first_viewed = db.get_first_event_datetime(token)
-                if first_viewed!=None:
-                    first_viewed = first_viewed.strftime('%d.%m.%Y %H:%M:%S')
-                return render_template('index.html', token=token, document=document, count=count, first_viewed=first_viewed)
-            else:
-                return render_template('token_expired.html', expired=document['valid_until'].strftime('%Y-%m-%d %H:%M:%S'))
+            isvalid = document['valid_until'] >= current_time
+            count = db.get_download_event_count(token)
+            first_viewed = db.get_first_event_datetime(token)
+            if first_viewed!=None:
+                first_viewed = first_viewed.strftime('%d.%m.%Y %H:%M:%S')
+            return render_template('index.html', token=token, document=document, count=count, first_viewed=first_viewed, is_valid=isvalid)
         else:
-            return jsonify({"error": "Document not found"}), 404
+            return render_template('index.html', document_found=False)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     

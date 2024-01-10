@@ -60,6 +60,8 @@
         <h1>Dokument Download</h1>
     </header>
     
+    {% if document_found|default(True)==True %}
+    {% if is_valid==True %}
     <main>
         <a href="{{ url_for('get_documents', token=token) }}" target="_blank">
             {{ document['title'] }}
@@ -76,5 +78,22 @@
     <footer>
         <p>Link gültig bis: {{ document['valid_until'].strftime('%d.%m.%Y %H:%M Uhr') }}</p>
     </footer>
+    {% else %}
+    <main>
+        <p>Link abgelaufen</p>
+    </main>
+
+    <footer>
+    </footer>
+
+    {% endif %}
+    {% else %}
+    <main>
+        <p>Dokument nicht gefunden</p>
+    </main>
+
+    <footer>
+    </footer>
+    {% endif %}
 </body>
 </html>
