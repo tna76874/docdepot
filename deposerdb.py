@@ -233,6 +233,31 @@ class DatabaseManager:
             return None
         finally:
             session.close()
+            
+    def get_first_event_datetime(self, token_value):
+        """
+        Retrieve the datetime of the first event associated with a given token.
+    
+        :param token_value: The value of the token to retrieve the first event datetime.
+        :return: The datetime of the first event, or None if the token is not found.
+        """
+        session = self.session
+        try:
+            token = session.query(Token).filter_by(token=token_value).first()
+            if token:
+                first_event = session.query(Event).filter_by(tid=token.tid).order_by(Event.date).first()
+                if first_event:
+                    return first_event.date
+                else:
+                    return None
+            else:
+                print(f"Token not found: {token_value}")
+                return None
+        except Exception as e:
+            print(f"Error getting first event datetime for Token: {token_value} - {e}")
+            return None
+        finally:
+            session.close()
 
 
 if __name__ == '__main__':

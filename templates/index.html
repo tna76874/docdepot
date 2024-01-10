@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +14,9 @@
         }
 
         h1 {
-            color: #333;
+            color: #fff;
+            background-color: #333;
+            padding: 10px;
         }
 
         a {
@@ -31,13 +33,48 @@
         a:hover {
             background-color: #2079b0;
         }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        footer {
+            background-color: #ccc;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>Dokument Download</h1>
-    <p>abrufbar bis {{ document['valid_until'].strftime('%d.%m.%Y %H:%M Uhr') }}</p>
-    <a href="{{ url_for('get_documents', token=token) }}" target="_blank">
-        {{ document['title'] }} (Downloads {{ count }})
-    </a>
+    <header>
+        <h1>Dokument Download</h1>
+    </header>
+    
+    <main>
+        <a href="{{ url_for('get_documents', token=token) }}" target="_blank">
+            {{ document['title'] }}
+        </a>
+        <p>
+        {% if count > 0 %}
+        Abgerufen: {{ first_viewed }} Uhr
+        {% else %}
+        Noch nicht abgerufen.
+        {% endif %}
+        </p>
+    </main>
+
+    <footer>
+        <p>Link gültig bis: {{ document['valid_until'].strftime('%d.%m.%Y %H:%M Uhr') }}</p>
+    </footer>
 </body>
 </html>
