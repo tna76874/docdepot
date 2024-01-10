@@ -9,6 +9,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker, Session
 import uuid
 from datetime import datetime, timedelta
+import os
 
 Base = declarative_base()
 
@@ -62,7 +63,7 @@ class DatabaseManager:
     """
     Class for managing the database operations.
     """
-    def __init__(self, data='data/data.db'):
+    def __init__(self, data='data/data.db', docdir = 'data/documents'):
         """
         Initialize the DatabaseManager with a given data file.
 
@@ -72,6 +73,7 @@ class DatabaseManager:
         self.engine = create_engine(db_url, echo=False)
         self.session = Session(bind=self.engine)
         self.create_tables()
+        self.docdir = docdir 
 
     def __del__(self):
         """
@@ -258,7 +260,88 @@ class DatabaseManager:
             return None
         finally:
             session.close()
+            
+    def delete_token(self, token_value):
+        """
+        Delete a token and associated events from the database.
 
+        :param token_value: The value of the token to be deleted.
+        """
+        session = self.session
+        try:
+            token = session.query(Token).filter_by(token=token_value).first()
+            if token:
+                # Delete associated events first
+                session.query(Event).filter_by(tid=token.tid).delete()
+                
+                # Delete the token itself
+                session.delete(token)
+                session.commit()
+        except Exception as e:
+            print(f"Error deleting token: {e}")
+        finally:
+            session.close()
+
+    def delete_document(self, did):
+        """
+        Delete a document and associated tokens and files from the database.
+
+        :param did: The unique identifier (did) of the document to be deleted.
+        """
+        session = self.session
+        try:
+            document = session.query(Document).filter_by(did=did).first()
+            if document:
+                # Delete associated tokens and events first
+                tokens = session.query(Token).filter_by(did=did).all()
+                for token in tokens:
+                    session.query(Event).filter_by(tid=token.tid).delete()
+                    session.delete(token)
+
+                # Delete the document itself
+                session.delete(document)
+                session.commit()
+
+                # Delete the associated file
+                doc_path = os.path.join(self.docdir, did)
+                if os.path.exists(doc_path):
+                    os.remove(doc_path)
+        except Exception as e:
+            print(f"Error deleting document: {e}")
+        finally:
+            session.close()
+            
+    def delete_user(self, uid):
+        """
+        Delete a user and associated documents, tokens, and files from the database.
+
+        :param uid: The unique identifier (uid) of the user to be deleted.
+        """
+        session = self.session
+        try:
+            user = session.query(User).filter_by(uid=uid).first()
+            if user:
+                # Delete associated documents, tokens, and events first
+                documents = session.query(Document).filter_by(user_uid=uid).all()
+                for document in documents:
+                    tokens = session.query(Token).filter_by(did=document.did).all()
+                    for token in tokens:
+                        session.query(Event).filter_by(tid=token.tid).delete()
+                        session.delete(token)
+                    # Delete the associated file
+                    doc_path = os.path.join(self.docdir, document.did)
+                    if os.path.exists(doc_path):
+                        os.remove(doc_path)
+                    # Delete the document itself
+                    session.delete(document)
+
+                # Delete the user itself
+                session.delete(user)
+                session.commit()
+        except Exception as e:
+            print(f"Error deleting user: {e}")
+        finally:
+            session.close()
 
 if __name__ == '__main__':
     db_manager = DatabaseManager()

@@ -21,7 +21,7 @@ if isinstance(apikey, type(None)):
     apikey = 'test'
 
 # Initialize the DatabaseManager
-db = DatabaseManager(data=f'{datadir}/data.db')
+db = DatabaseManager(data=f'{datadir}/data.db', docdir = documentdir)
 
 # Initialize Flask app and API
 app = Flask(__name__)
