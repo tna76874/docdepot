@@ -7,7 +7,7 @@ Depose Files: A simple file deposition API using Flask.
 from flask import Flask, jsonify, send_file, render_template, request
 from flask_restful import Api, Resource
 import os
-from deposerdb import *
+from docdepotdb import *
 from datetime import datetime
 
 # Define directories and create them if they don't exist

@@ -2,8 +2,8 @@ FROM python:3.9
 
 WORKDIR /app
 
-COPY deposer.py /app/deposer.py
-COPY deposerdb.py /app/deposerdb.py
+COPY docdepot.py /app/docdepot.py
+COPY docdepotdb.py /app/docdepotdb.py
 COPY templates /app/templates
 COPY requirements.txt /app/requirements.txt
 
