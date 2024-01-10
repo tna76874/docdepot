@@ -73,7 +73,120 @@ class DocumentResource(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
+class GenerateTokenResource(Resource):
+    def post(self):
+        """
+        Endpoint for generating a new token for a document.
+
+        Request Body:
+        {
+            "did": "Document ID"
+        }
+
+        Returns:
+        {
+            "token": "Unique token for accessing the document."
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            did = data.get('did')
+
+            # Generate a new token for the document
+            token = db.add_token(did)
+
+            return {"token": token}, 201
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+class DeleteTokenResource(Resource):
+    def delete(self):
+        """
+        Endpoint for deleting a token.
+
+        Request Body:
+        {
+            "token_value": "Value of the token to be deleted."
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            token_value = data.get('token_value')
+
+            # Delete the token and associated events
+            db.delete_token(token_value)
+
+            return {"message": f"Token with value {token_value} deleted successfully."}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+class DeleteUserResource(Resource):
+    def delete(self):
+        """
+        Endpoint for deleting a user and associated documents, tokens, and files.
+
+        Request Body:
+        {
+            "uid": "User's unique identifier."
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            uid = data.get('uid')
+
+            # Delete the user and associated documents, tokens, and files
+            db.delete_user(uid)
+
+            return {"message": f"User with UID {uid} deleted successfully."}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+class UpdateTokenValidUntilResource(Resource):
+    def put(self):
+        """
+        Endpoint for updating the 'valid_until' date of a token.
+
+        Request Body:
+        {
+            "token_value": "Value of the token to be updated.",
+            "valid_until": "New 'valid_until' date for the token."
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            token_value = data.get('token_value')
+            valid_until = data.get('valid_until')
+
+            # Update the 'valid_until' date of the token
+            db.update_token_valid_until(token_value, valid_until)
+
+            return {"message": f"Token with value {token_value} updated successfully."}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+# Add routes to the API
 api.add_resource(DocumentResource, '/api/add_document')
+api.add_resource(GenerateTokenResource, '/api/generate_token')
+api.add_resource(DeleteTokenResource, '/api/delete_token')
+api.add_resource(DeleteUserResource, '/api/delete_user')
+api.add_resource(UpdateTokenValidUntilResource, '/api/update_token_valid_until')
+
 
 @app.route('/document/<token>')
 def get_documents(token):

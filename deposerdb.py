@@ -342,6 +342,67 @@ class DatabaseManager:
             print(f"Error deleting user: {e}")
         finally:
             session.close()
+            
+    def update_token_valid_until(self, token_value, new_valid_until):
+        """
+        Update the 'valid_until' date of a token.
+
+        :param token_value: The value of the token to be updated.
+        :param new_valid_until: The new 'valid_until' date for the token.
+        """
+        if not isinstance(new_valid_until, datetime):
+            try:
+                new_valid_until = datetime.fromisoformat(new_valid_until)
+            except (ValueError, TypeError):
+                raise ValueError("new_valid_until should be a datetime object or a string in ISO format.")
+
+        session = self.session
+        try:
+            token = session.query(Token).filter_by(token=token_value).first()
+            if token:
+                token.valid_until = new_valid_until
+                session.commit()
+            else:
+                print(f"Token not found: {token_value}")
+        except Exception as e:
+            print(f"Error updating token: {e}")
+        finally:
+            session.close()
+            
+    def delete_expired_tokens_and_documents(self):
+        """
+        Delete all expired tokens and associated documents with no remaining tokens.
+        """
+        session = self.session
+        try:
+            current_datetime = datetime.utcnow()
+
+            # Delete expired tokens
+            expired_tokens = session.query(Token).filter(Token.valid_until < current_datetime).all()
+            for token in expired_tokens:
+                # Delete associated events first
+                session.query(Event).filter_by(tid=token.tid).delete()
+                session.delete(token)
+
+                # Check if the associated document has no remaining tokens
+                remaining_tokens = session.query(Token).filter_by(did=token.did).count()
+                if remaining_tokens == 0:
+                    # Delete the associated file
+                    doc_path = os.path.join(self.docdir, token.did)
+                    if os.path.exists(doc_path):
+                        os.remove(doc_path)
+
+                    # Delete the document itself
+                    document = session.query(Document).filter_by(did=token.did).first()
+                    if document:
+                        session.delete(document)
+
+            session.commit()
+        except Exception as e:
+            print(f"Error deleting expired tokens and documents: {e}")
+        finally:
+            session.close()
+
 
 if __name__ == '__main__':
     db_manager = DatabaseManager()
