@@ -438,6 +438,130 @@ class DatabaseManager:
         finally:
             session.close()
 
+    def get_user_of_token(self, token_value):
+        """
+        Retrieve the user associated with a given token.
+    
+        :param token_value: The value of the token to retrieve the associated user.
+        :return: A dictionary containing user information, or None if not found.
+        """
+        session = self.session
+        try:
+            token = session.query(Token).filter_by(token=token_value).first()
+            if token:
+                user = token.document.user
+                if user:
+                    return {
+                        'uid': user.uid,
+                        'valid_until': user.valid_until,
+                    }
+                else:
+                    print(f"User not found for Token: {token_value}")
+                    return None
+            else:
+                print(f"Token not found: {token_value}")
+                return None
+        except Exception as e:
+            print(f"Error getting user from Token: {token_value} - {e}")
+            return None
+        finally:
+            session.close()
+
+    def calculate_average_time_for_user(self, user_uid):
+        """
+        Calculate the average time span for all tokens of a given user
+        between document upload time and the first token event.
+    
+        :param user_uid: The unique identifier (uid) of the user.
+        :return: The average time span as a timedelta object, or None if no relevant data found.
+        """
+        session = self.session
+        try:
+            user = session.query(User).filter_by(uid=user_uid).first()
+            if user:
+                documents = user.documents
+                total_time_span = timedelta()
+    
+                for document in documents:
+                    # Check if the document has tokens
+                    if document.tokens:
+                        # Find the earliest event datetime for the document's tokens
+                        earliest_event_datetime = (
+                            session.query(func.min(Event.date))
+                            .join(Token, Event.tid == Token.tid)
+                            .filter(Token.did == document.did)
+                            .scalar()
+                        )
+    
+                        # Calculate the time span between document upload time and the earliest event
+                        if earliest_event_datetime:
+                            time_span = earliest_event_datetime - document.upload_datetime
+                            total_time_span += time_span
+    
+                # Calculate the average time span
+                average_time_span = total_time_span / len(documents) if (len(documents) > 0) & (total_time_span.total_seconds()>0) else None
+                return average_time_span
+    
+            else:
+                print(f"User not found: {user_uid}")
+                return None
+    
+        except Exception as e:
+            print(f"Error calculating average time span for user {user_uid}: {e}")
+            return None
+    
+        finally:
+            session.close()
+
+    def cluster_time_span(self, average_time_span):
+        """
+        Cluster the average time span to the largest time unit.
+    
+        :param average_time_span: The average time span as a timedelta object.
+        :return: A tuple containing the clustered time value and unit.
+        """
+        if average_time_span is None:
+            return None
+    
+        total_seconds = int(average_time_span.total_seconds())
+        days, remainder = divmod(total_seconds, 86400)  # 86400 seconds in a day
+        hours, remainder = divmod(remainder, 3600)      # 3600 seconds in an hour
+        minutes, seconds = divmod(remainder, 60)        # 60 seconds in a minute
+    
+        if days > 0:
+            if days == 1:
+                return days, 'Tag'
+            else:
+                return days, 'Tage'
+        elif hours > 0:
+            if hours == 1:
+                return hours, 'Stunde'
+            else:
+                return hours, 'Stunden'
+        elif minutes > 0:
+            if minutes == 1:
+                return minutes, 'Minute'
+            else:
+                return minutes, 'Minuten'
+        else:
+            return seconds, 'Sekunden'
+            
+    def calculate_average_time_for_token(self, token_value):
+        """
+        Calculate the average time span for a given token
+        between document upload time and the first token event.
+    
+        :param token_value: The value of the token for which to calculate the average time span.
+        :return: The average time span as a timedelta object, or None if no relevant data found.
+        """
+        user_info = self.get_user_of_token(token_value)
+        if user_info:
+            user_uid = user_info['uid']
+            return self.calculate_average_time_for_user(user_uid)
+        else:
+            print(f"User information not found for Token: {token_value}")
+            return None
+
 
 if __name__ == '__main__':
     self = DatabaseManager()

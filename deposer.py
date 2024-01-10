@@ -233,9 +233,20 @@ def render_index(token):
             isvalid = document['valid_until'] >= current_time
             count = db.get_download_event_count(token)
             first_viewed = db.get_first_event_datetime(token)
+            
+            average_time = db.cluster_time_span(db.calculate_average_time_for_token(token))
+            
             if first_viewed!=None:
                 first_viewed = first_viewed.strftime('%d.%m.%Y %H:%M:%S')
-            return render_template('index.html', token=token, document=document, count=count, first_viewed=first_viewed, is_valid=isvalid)
+            return render_template(
+                'index.html',
+                token=token,
+                document=document,
+                count=count,
+                first_viewed=first_viewed,
+                is_valid=isvalid,
+                average_time=average_time
+            )
         else:
             return render_template('index.html', document_found=False)
     except Exception as e:
@@ -265,4 +276,4 @@ def handle_error(error):
     return jsonify({"error": str(error)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
