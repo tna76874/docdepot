@@ -20,8 +20,9 @@ apikey = os.environ.get("DEPOSER_API_KEY")
 if isinstance(apikey, type(None)):
     apikey = 'test'
 
-# Initialize the DatabaseManager
+# Initialize the DatabaseManager and cleanup expired files
 db = DatabaseManager(data=f'{datadir}/data.db', docdir = documentdir)
+db.delete_expired_tokens_and_documents()
 
 # Initialize Flask app and API
 app = Flask(__name__)

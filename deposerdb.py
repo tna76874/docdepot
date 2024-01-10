@@ -4,12 +4,14 @@
 A simple database management system for storing users, documents, tokens, and events.
 """
 
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker, Session
+from sqlalchemy.orm import relationship, sessionmaker, Session, aliased
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
+
+local_timezone = timezone(timedelta(hours=1))
 
 Base = declarative_base()
 
@@ -19,7 +21,7 @@ class User(Base):
     """
     __tablename__ = 'users'
     uid = Column(String, primary_key=True)
-    valid_until = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=365))
+    valid_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=365))
     documents = relationship('Document', back_populates='user', cascade='all, delete-orphan')
 
 class Document(Base):
@@ -28,10 +30,10 @@ class Document(Base):
     """
     __tablename__ = 'documents'
     did = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), unique=True)
-    valid_until = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=365))
+    valid_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=365))
     title = Column(String)
     filename = Column(String)
-    upload_datetime = Column(DateTime, default=lambda: datetime.utcnow())
+    upload_datetime = Column(DateTime, default=lambda: datetime.now(local_timezone))
     user_uid = Column(String, ForeignKey('users.uid'))
     user = relationship('User', back_populates='documents')
     tokens = relationship('Token', back_populates='document', cascade='all, delete-orphan')
@@ -44,8 +46,8 @@ class Token(Base):
     tid = Column(Integer, primary_key=True, autoincrement=True)
     did = Column(String, ForeignKey('documents.did'))
     token = Column(String, unique=True, default=lambda: str(uuid.uuid4()))
-    valid_until = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=365))
-    create = Column(DateTime, default=lambda: datetime.utcnow())
+    valid_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=365))
+    create = Column(DateTime, default=lambda: datetime.now(local_timezone))
     document = relationship('Document', back_populates='tokens')
     events = relationship('Event', back_populates='token', cascade='all, delete-orphan', foreign_keys='[Event.tid]')
 
@@ -375,7 +377,7 @@ class DatabaseManager:
         """
         session = self.session
         try:
-            current_datetime = datetime.utcnow()
+            current_datetime = datetime.now(local_timezone)
 
             # Delete expired tokens
             expired_tokens = session.query(Token).filter(Token.valid_until < current_datetime).all()
@@ -402,10 +404,43 @@ class DatabaseManager:
             print(f"Error deleting expired tokens and documents: {e}")
         finally:
             session.close()
+            
+    def delete_documents_without_events_after_n_days(self, n=30):
+        """
+        Delete documents that have no events N days after upload_datetime.
+
+        :param n: The number of days after upload_datetime.
+        """
+        session = self.session
+        try:
+            current_datetime = datetime.now(local_timezone)
+            threshold_datetime = current_datetime - timedelta(days=n)
+
+            # Find documents with no events N days after upload_datetime
+            documents_to_delete = (
+                session.query(Document)
+                .outerjoin(Token, Document.did == Token.did)
+                .outerjoin(Event, Token.tid == Event.tid)
+                .group_by(Document.did)
+                .having(and_(
+                    func.max(Event.date) == None,  # No events after create
+                    Document.upload_datetime < threshold_datetime
+                ))
+                .all()
+            )
+
+            # Delete each document using the existing delete_document method
+            for document in documents_to_delete:
+                self.delete_document(document.did)
+
+        except Exception as e:
+            print(f"Error deleting documents without events after {n} days: {e}")
+        finally:
+            session.close()
 
 
 if __name__ == '__main__':
-    db_manager = DatabaseManager()
+    self = DatabaseManager()
     
     # Uncomment and use the following lines to test the methods individually:
     # db_manager.add_user("example_uid")
@@ -426,4 +461,4 @@ if __name__ == '__main__':
     #
     # db_manager.get_download_event_count(token)
     
-    db_manager.close_session()
+    self.close_session()
