@@ -561,6 +561,34 @@ class DatabaseManager:
         else:
             print(f"User information not found for Token: {token_value}")
             return None
+        
+    def calculate_average_time_for_all_users(self):
+        """
+        Calculate the average time span for each user between document upload time and the first token event.
+    
+        :return: A dictionary where keys are user UIDs and values are the average time spans as timedelta objects.
+        """
+        session = self.session
+        try:
+            user_average_times = {}
+    
+            # Get all users
+            users = session.query(User).all()
+    
+            for user in users:
+                user_uid = user.uid
+                average_time_span = self.calculate_average_time_for_user(user_uid)
+                user_average_times[user_uid] = average_time_span
+    
+            return user_average_times
+    
+        except Exception as e:
+            print(f"Error calculating average time span for all users: {e}")
+            return None
+    
+        finally:
+            session.close()
+
 
 
 if __name__ == '__main__':

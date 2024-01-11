@@ -9,6 +9,7 @@ from flask_restful import Api, Resource
 import os
 from docdepotdb import *
 from datetime import datetime
+import json
 
 # Define directories and create them if they don't exist
 datadir = 'data'
@@ -181,12 +182,33 @@ class UpdateTokenValidUntilResource(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
+class AverageTimeForAllUsersResource(Resource):
+    def get(self):
+        """
+        Endpoint for retrieving the average time span for each user between document upload time and the first token event.
+
+        Returns:
+        - A dictionary where keys are user UIDs and values are the average time spans as timedelta objects.
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            user_average_times_dt = db.calculate_average_time_for_all_users()
+            user_average_times_seconds = {user: time.total_seconds() if time is not None else None for user, time in user_average_times_dt.items()}
+
+            return user_average_times_seconds, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
 # Add routes to the API
 api.add_resource(DocumentResource, '/api/add_document')
 api.add_resource(GenerateTokenResource, '/api/generate_token')
 api.add_resource(DeleteTokenResource, '/api/delete_token')
 api.add_resource(DeleteUserResource, '/api/delete_user')
 api.add_resource(UpdateTokenValidUntilResource, '/api/update_token_valid_until')
+api.add_resource(AverageTimeForAllUsersResource, '/api/average_time_for_all_users')
 
 
 @app.route('/document/<token>')
