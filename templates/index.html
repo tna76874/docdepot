@@ -76,9 +76,10 @@
     </main>
 
     <footer>
-        <p>Link gültig bis: {{ document['valid_until'].strftime('%d.%m.%Y %H:%M Uhr') }}
-        {% if average_time is not none %}, mittlere Abrufzeit ca. {{ average_time[0] }} {{ average_time[1] }}{% endif %}
-        </p>
+        Link gültig bis: {{ document['valid_until'].strftime('%d.%m.%Y %H:%M Uhr') }}</p>
+        {% if average_time is not none %}
+        <p>mittlere Abrufzeit ca. {{ average_time[0] }} {{ average_time[1] }}</p>
+        {% endif %}
     </footer>
     {% else %}
     <main>
