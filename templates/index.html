@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Dokument Download</title>
     <style>
         body {
@@ -53,6 +54,30 @@
             width: 100%;
             text-align: center;
         }
+
+
+        .status-section {
+            padding: 4vw;
+            text-align: center;
+            margin: 4vw 0;
+            border-radius: 2vw;
+            font-size: clamp(14px, 4vw, 24px);;
+        }
+
+        .status-section.abgerufen {
+            background-color: green;
+            color: #fff;
+        }
+
+        .status-section.nicht-abgerufen {
+            background-color: #e74c3c;
+            color: #fff;
+        }
+
+        .status-section p {
+            margin: 4vw 0;
+            font-size: clamp(12px, 3.5vw, 18px);
+        }
     </style>
 </head>
 <body>
@@ -66,17 +91,23 @@
         <a href="{{ url_for('get_documents', token=token) }}" target="_blank">
             {{ document['title'] }}
         </a>
-        <p>
         {% if count > 0 %}
-        {% if show_info|default(False) == True %}
-        Abgerufen: {{ first_viewed }} Uhr
+            <div class="status-section abgerufen">
+                <p>
+                    {% if show_info|default(False) == True %}
+                        <i class="fas fa-check-circle"></i> Abgerufen: {{ first_viewed }} Uhr
+                    {% else %}
+                        <i class="fas fa-check-circle"></i> Dokument wurde bereits abgerufen.
+                    {% endif %}
+                </p>
+            </div>
         {% else %}
-        Dokument wurde bereits abgerufen.
+            <div class="status-section nicht-abgerufen">
+                <p>
+                    <i class="fas fa-exclamation-circle"></i> Dokument ist noch nicht abgerufen.
+                </p>
+            </div>
         {% endif %}
-        {% else %}
-        Dokument ist noch nicht abgerufen.
-        {% endif %}
-        </p>
     </main>
 
     <footer>
