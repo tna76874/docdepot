@@ -57,7 +57,7 @@ class Event(Base):
     """
     __tablename__ = 'events'
     eid = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(DateTime, default=datetime.now(local_timezone))
+    date = Column(DateTime, default=lambda: datetime.now(local_timezone))
     tid = Column(Integer, ForeignKey('tokens.tid'))
     token = relationship('Token', back_populates='events', foreign_keys=[tid])
 
