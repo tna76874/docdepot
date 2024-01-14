@@ -17,9 +17,14 @@ documentdir = f'{datadir}/documents'
 _ = [os.makedirs(path) for path in [datadir, documentdir] if not os.path.exists(path)]
 
 # Set default API key (you can also use environment variables)
-apikey = os.environ.get("DEPOSER_API_KEY")
-if isinstance(apikey, type(None)):
-    apikey = 'test'
+apikey = os.environ.get("DOCDEPOT_API_KEY", "test")
+# WEBSITE SETTINGS
+html_settings = {
+    "show_info": os.environ.get("DOCDEPOT_SHOW_INFO", "False").lower() == "true",
+    "show_response_time": os.environ.get("DOCDEPOT_SHOW_RESPONSE_TIME", "False").lower() == "true",
+    "show_timestamp": os.environ.get("DOCDEPOT_SHOW_TIMESTAMP", "False").lower() == "true",
+}
+
 
 # Initialize the DatabaseManager and cleanup expired files
 db = DatabaseManager(data=f'{datadir}/data.db', docdir = documentdir)
@@ -297,10 +302,11 @@ def render_index(token):
                 count=count,
                 first_viewed=first_viewed,
                 is_valid=isvalid,
-                average_time=average_time
+                average_time=average_time,
+                html_settings = html_settings
             )
         else:
-            return render_template('index.html', document_found=False)
+            return render_template('index.html', document_found=False, html_settings=html_settings)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     

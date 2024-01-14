@@ -1,0 +1,14 @@
+version: '3'
+services:
+  docdepot:
+    image: ghcr.io/tna76874/docdepot:edge
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - IMAGE_TAG=ghcr.io/tna76874/docdepot:edge
+    ports:
+      - "5000:5000"
+    container_name: docdepot-container
+    volumes:
+      - ./data:/app/data

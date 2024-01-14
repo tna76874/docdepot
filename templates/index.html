@@ -92,10 +92,12 @@
         <a href="{{ url_for('get_documents', token=token) }}" target="_blank">
             {{ document['title'] }}
         </a>
+
+        {% if html_settings["show_info"]|default(False) == True %}
         {% if count > 0 %}
             <div class="status-section abgerufen">
                 <p>
-                    {% if show_info|default(False) == True %}
+                    {% if html_settings["show_timestamp"]|default(False) == True %}
                         <i class="fas fa-check-circle"></i> Abgerufen: {{ first_viewed }} Uhr
                     {% else %}
                         <i class="fas fa-check-circle"></i> Dokument wurde bereits abgerufen.
@@ -109,11 +111,13 @@
                 </p>
             </div>
         {% endif %}
+        {% endif %}
+
     </main>
 
     <footer>
         Link gültig bis: {{ document['valid_until'].strftime('%d.%m.%Y %H:%M Uhr') }}</p>
-        {% if (average_time is not none) and (show_info|default(False) == True) %}
+        {% if (average_time is not none) and (html_settings["show_respose_time"]|default(False) == True) %}
         <p>mittlere Abrufzeit ca. {{ average_time[0] }} {{ average_time[1] }}</p>
         {% endif %}
     </footer>
