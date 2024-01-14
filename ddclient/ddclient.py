@@ -11,7 +11,7 @@ import argparse
 import os
 
 class DocDepotManager:
-    def __init__(self, api_key, host='https://localhost:5000'):
+    def __init__(self, api_key, host='http://localhost:5000'):
         self.host = host
         self.api_key = api_key
         self.api_url = urljoin(self.host+'/','/api')

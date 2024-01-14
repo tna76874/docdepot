@@ -504,6 +504,8 @@ class DatabaseManager:
             if user:
                 documents = user.documents
                 total_time_span = timedelta()
+                
+                total_time_spans = list()
     
                 for document in documents:
                     # Check if the document has tokens
@@ -518,11 +520,17 @@ class DatabaseManager:
     
                         # Calculate the time span between document upload time and the earliest event
                         if earliest_event_datetime:
-                            time_span = earliest_event_datetime - document.upload_datetime
-                            total_time_span += time_span
+                            if earliest_event_datetime > document.upload_datetime:
+                                time_span = earliest_event_datetime - document.upload_datetime
+                                total_time_spans.append(time_span)
     
                 # Calculate the average time span
-                average_time_span = total_time_span / len(documents) if (len(documents) > 0) & (total_time_span.total_seconds()>0) else None
+                time_sum = timedelta()
+                for zeit in total_time_spans:
+                    time_sum+=zeit
+                    
+                average_time_span = time_sum / len(total_time_spans) if total_time_spans else None
+
                 return average_time_span
     
             else:
