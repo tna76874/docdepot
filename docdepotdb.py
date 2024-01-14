@@ -5,8 +5,7 @@ A simple database management system for storing users, documents, tokens, and ev
 """
 
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker, Session, aliased
+from sqlalchemy.orm import relationship, sessionmaker, Session, aliased, declarative_base
 import uuid
 from datetime import datetime, timedelta, timezone
 import os
@@ -94,6 +93,30 @@ class DatabaseManager:
         Create the database tables if they do not exist.
         """
         Base.metadata.create_all(bind=self.engine)
+        
+    def rename_users(self, rename_dict):
+        """
+        Rename users in the database based on the provided dictionary.
+
+        :param rename_dict: A dictionary where keys are the old user names (A) and values are the new user names (B).
+        """
+        for old_name, new_name in rename_dict.items():
+            # Query for users with the old name
+            users_to_rename = self.session.query(User).filter(User.uid == old_name).all()
+
+            for user in users_to_rename:
+                # Update the user's UID to the new name
+                user.uid = new_name
+    
+                # Query for documents associated with the user
+                documents_to_rename = self.session.query(Document).filter(Document.user_uid == old_name).all()
+    
+                for document in documents_to_rename:
+                    # Update the document's user UID to the new name
+                    document.user_uid = new_name
+
+        # Commit the changes to the database
+        self.session.commit()
 
     def add_user(self, uid):
         """

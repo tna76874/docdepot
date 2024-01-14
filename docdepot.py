@@ -201,6 +201,35 @@ class AverageTimeForAllUsersResource(Resource):
             return user_average_times_seconds, 200
         except Exception as e:
             return {"error": str(e)}, 500
+        
+class RenameUsersResource(Resource):
+    def post(self):
+        """
+        Endpoint for renaming users.
+
+        Request Body:
+        {
+            "user_dict": {
+                "old_uid": "New_UID",
+                "another_old_uid": "Another_New_UID",
+                ...
+            }
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            user_dict = data.get('user_dict')
+
+            # Rename users based on the provided dictionary
+            db.rename_users(user_dict)
+
+            return {"message": "Users renamed successfully."}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
 
 # Add routes to the API
 api.add_resource(DocumentResource, '/api/add_document')
@@ -209,6 +238,7 @@ api.add_resource(DeleteTokenResource, '/api/delete_token')
 api.add_resource(DeleteUserResource, '/api/delete_user')
 api.add_resource(UpdateTokenValidUntilResource, '/api/update_token_valid_until')
 api.add_resource(AverageTimeForAllUsersResource, '/api/average_time_for_all_users')
+api.add_resource(RenameUsersResource, '/api/rename_users')
 
 
 @app.route('/document/<token>')
