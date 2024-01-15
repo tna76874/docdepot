@@ -8,6 +8,7 @@ from flask import Flask, jsonify, send_file, render_template, request
 from flask_restful import Api, Resource
 import os
 from docdepotdb import *
+import ddclient
 from datetime import datetime
 import json
 
@@ -235,6 +236,19 @@ class RenameUsersResource(Resource):
             return {"message": "Users renamed successfully."}, 200
         except Exception as e:
             return {"error": str(e)}, 500
+        
+class DDClientVersionResource(Resource):
+    def get(self):
+        """
+        Endpoint for retrieving the version of ddclient.
+
+        Returns:
+        - version: Version of ddclient.
+        """
+        try:
+            return {"version": ddclient.__version__}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
 
 # Add routes to the API
 api.add_resource(DocumentResource, '/api/add_document')
@@ -244,6 +258,7 @@ api.add_resource(DeleteUserResource, '/api/delete_user')
 api.add_resource(UpdateTokenValidUntilResource, '/api/update_token_valid_until')
 api.add_resource(AverageTimeForAllUsersResource, '/api/average_time_for_all_users')
 api.add_resource(RenameUsersResource, '/api/rename_users')
+api.add_resource(DDClientVersionResource, '/api/ddclient_version')
 
 
 @app.route('/document/<token>')

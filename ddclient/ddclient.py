@@ -10,6 +10,13 @@ import json
 import argparse
 import os
 
+
+try:
+    from ddclient import __version__
+except:
+    from __init__ import __version__
+
+
 class DocDepotManager:
     def __init__(self, api_key, host='http://localhost:5000'):
         self.host = host
@@ -18,6 +25,14 @@ class DocDepotManager:
         self.success = False
         self.headers = {'Authorization': api_key}
         self.data={}
+
+        # Check ddclient version compatibility
+        server_ddclient_version = self.get_server_ddclient_version()
+        local_ddclient_version = __version__
+
+        if server_ddclient_version != local_ddclient_version:
+            raise ValueError(f"DDClient version ({local_ddclient_version}) does not match server version ({server_ddclient_version}).")
+
 
     def upload_pdf(self, **kwargs):
         required_params = ['title', 'filename', 'user_uid', 'file_path']
@@ -204,6 +219,25 @@ class DocDepotManager:
                 return f"Error: {response.status_code}, {error_message}"
             except ValueError:
                 return f"Error: {response.status_code}, Response content: {response.text}"
+            
+    def get_server_ddclient_version(self):
+        """
+        Retrieve the supported ddclient version from the server.
+
+        Returns:
+        - version: Supported version of ddclient on the server.
+        """
+        try:
+            url = urljoin(self.api_url + '/', 'ddclient_version')
+            response = requests.get(url, headers=self.headers)
+            
+            if response.status_code == 200:
+                return response.json().get('version')
+            else:
+                raise ValueError(f"Unable to retrieve ddclient version from the server. Status Code: {response.status_code}")
+        except Exception as e:
+            raise ValueError(f"Error retrieving ddclient version: {str(e)}")
+
 
     def get_data(self):
         if self.success==True:
