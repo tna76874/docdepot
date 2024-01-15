@@ -5,6 +5,7 @@ WORKDIR /app
 COPY docdepot.py /app/docdepot.py
 COPY docdepotdb.py /app/docdepotdb.py
 COPY templates /app/templates
+COPY ddclient /app/ddclient
 COPY requirements.txt /app/requirements.txt
 
 ENV DEPOSER_API_KEY='test'
