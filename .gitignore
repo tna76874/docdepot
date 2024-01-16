@@ -2,6 +2,7 @@
 data.db
 data
 documents
+COMMIT_HASH
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

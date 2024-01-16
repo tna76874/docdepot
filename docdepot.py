@@ -23,7 +23,17 @@ html_settings = {
     "show_info": os.environ.get("DOCDEPOT_SHOW_INFO", "False").lower() == "true",
     "show_response_time": os.environ.get("DOCDEPOT_SHOW_RESPONSE_TIME", "False").lower() == "true",
     "show_timestamp": os.environ.get("DOCDEPOT_SHOW_TIMESTAMP", "False").lower() == "true",
+    "github_repo": os.environ.get("DOCDEPOT_GITHUB_REPO", "https://github.com/tna76874/docdepot"),    
 }
+
+# read version as commit hash
+commit_hash_file='COMMIT_HASH'
+if os.path.exists(commit_hash_file):
+    with open(commit_hash_file, 'r') as datei:
+        commit_hash = datei.read().replace('\n', '')
+    html_settings["github_repo"] += f'/tree/{commit_hash}'
+else:
+    commit_hash = None
 
 
 # Initialize the DatabaseManager and cleanup expired files

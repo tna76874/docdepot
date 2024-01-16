@@ -2,6 +2,13 @@ FROM python:3.9
 
 WORKDIR /app
 
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update && apt-get install -y git
+
+COPY .git /app/.git
+RUN git --git-dir=/app/.git rev-parse HEAD > COMMIT_HASH && \
+    rm -rf /app/.git
+
 COPY docdepot.py /app/docdepot.py
 COPY docdepotdb.py /app/docdepotdb.py
 COPY templates /app/templates
