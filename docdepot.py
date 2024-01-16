@@ -266,9 +266,9 @@ def get_documents(token):
                 file_path = f'{documentdir}/{document["did"]}'
                 return send_file(file_path, as_attachment=False, download_name=document["filename"])
             else:
-                return render_template('token_expired.html', expired=document['valid_until'].strftime('%Y-%m-%d %H:%M:%S'))
+                return render_template('index.html', document_found=True, is_valid=False, html_settings=html_settings)
         else:
-            return {"error": "Document not found"}, 404
+            return render_template('index.html', document_found=False, html_settings=html_settings)
     except Exception as e:
         return {"error": str(e)}, 500
 
