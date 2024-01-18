@@ -11,6 +11,7 @@ from docdepotdb import *
 import ddclient
 from datetime import datetime
 import json
+from functools import wraps
 
 # Define directories and create them if they don't exist
 datadir = 'data'
@@ -259,6 +260,71 @@ class DDClientVersionResource(Resource):
             return {"version": ddclient.__version__}, 200
         except Exception as e:
             return {"error": str(e)}, 500
+        
+def convert_datetimes_to_strings(data_func):
+    """
+    Decorator function to convert datetime objects to string representations.
+
+    Parameters:
+    - data_func: Function that retrieves data and returns a list of dictionaries.
+
+    Returns:
+    - Wrapper function that performs the datetime-to-string conversion.
+    """
+    @wraps(data_func)
+    def wrapper(*args, **kwargs):
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            # Retrieve data using the original function
+            data = data_func(*args, **kwargs)
+
+            # Convert datetime objects to strings before returning
+            for entry in data:
+                for key, value in entry.items():
+                    if isinstance(value, datetime):
+                        entry[key] = value.strftime('%Y-%m-%d %H:%M:%S.%f') if value else None
+
+            return data if data else {"message": f"No {data_func.__name__} found."}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+    return wrapper
+
+class GetEventsResource(Resource):
+    @convert_datetimes_to_strings
+    def get(self):
+        """
+        Endpoint for retrieving all events.
+
+        Returns:
+        - A list of dictionaries containing event information.
+        """
+        return db.get_events()
+
+class GetDocumentsResource(Resource):
+    @convert_datetimes_to_strings
+    def get(self):
+        """
+        Endpoint for retrieving all documents.
+
+        Returns:
+        - A list of dictionaries containing document information.
+        """
+        return db.get_documents()
+
+class GetUsersResource(Resource):
+    @convert_datetimes_to_strings
+    def get(self):
+        """
+        Endpoint for retrieving all users.
+
+        Returns:
+        - A list of dictionaries containing user information.
+        """
+        return db.get_users()
 
 # Add routes to the API
 api.add_resource(DocumentResource, '/api/add_document')
@@ -269,6 +335,9 @@ api.add_resource(UpdateTokenValidUntilResource, '/api/update_token_valid_until')
 api.add_resource(AverageTimeForAllUsersResource, '/api/average_time_for_all_users')
 api.add_resource(RenameUsersResource, '/api/rename_users')
 api.add_resource(DDClientVersionResource, '/api/ddclient_version')
+api.add_resource(GetEventsResource, '/api/get_events')
+api.add_resource(GetDocumentsResource, '/api/get_documents')
+api.add_resource(GetUsersResource, '/api/get_users')
 
 
 @app.route('/document/<token>')

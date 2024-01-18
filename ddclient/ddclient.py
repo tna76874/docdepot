@@ -237,7 +237,72 @@ class DocDepotManager:
                 raise ValueError(f"Unable to retrieve ddclient version from the server. Status Code: {response.status_code}")
         except Exception as e:
             raise ValueError(f"Error retrieving ddclient version: {str(e)}")
+            
+    def get_events(self):
+        """
+        Retrieve all events.
+    
+        Returns:
+        - A list of dictionaries containing event information.
+        """
+        url = urljoin(self.api_url + '/', 'get_events')
+        response = requests.get(url, headers=self.headers)
+    
+        if response.status_code == 200:
+            self.success = True
+            events_info = response.json()
+            return events_info if events_info else {"message": "No events found."}
+        else:
+            self.success = False
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
+            
+    def get_documents(self):
+        """
+        Retrieve documents for all users.
+    
+        Returns:
+        - A list of dictionaries containing document information.
+        """
+        url = urljoin(self.api_url + '/', 'get_documents')
+        response = requests.get(url, headers=self.headers)
+    
+        if response.status_code == 200:
+            self.success = True
+            documents_info = response.json()
+            return documents_info if documents_info else {"message": "No documents found."}
+        else:
+            self.success = False
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
 
+    def get_users(self):
+        """
+        Retrieve information about all users.
+    
+        Returns:
+        - A list of dictionaries containing user information.
+        """
+        url = urljoin(self.api_url + '/', 'get_users')
+        response = requests.get(url, headers=self.headers)
+    
+        if response.status_code == 200:
+            self.success = True
+            users_info = response.json()
+            return users_info if users_info else {"message": "No users found."}
+        else:
+            self.success = False
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
 
     def get_data(self):
         if self.success==True:
@@ -263,10 +328,18 @@ def get_api_key():
     # If not found in environment or file, raise an error
     raise ValueError("API key not found. Set DOCDEPOT_API_KEY environment variable or specify a key file with DOCDEPOT_API_KEY_FILE.")
 
+def get_host():
+    # Try to get host from environment variable
+    host = os.getenv('DOCDEPOT_HOST')
+    if host:
+        return host
+
+    # If not found in environment or file, use default host
+    return 'http://localhost:5000'
 
 def main():
     parser = argparse.ArgumentParser(description='DocDepot Client CLI')
-    parser.add_argument('--host', type=str, default='http://localhost:5000', help='DocDepot server host URL')
+    parser.add_argument('--host', type=str, default=get_host(), help='DocDepot server host URL')
     parser.add_argument('--action', type=str, choices=['upload', 'generate_token', 'delete_token', 'delete_user', 'update_token_valid_until', 'get_average_times'], help='Action to perform')
     parser.add_argument('--document_id', type=int, help='Document ID for token-related actions')
     parser.add_argument('--token_value', type=str, help='Token value for token-related actions')

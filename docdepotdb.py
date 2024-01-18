@@ -619,6 +619,109 @@ class DatabaseManager:
     
         finally:
             session.close()
+            
+    def get_events(self):
+        """
+        Retrieve all events with information including date, token, user_uid, and document title.
+    
+        :return: A list of dictionaries containing event information.
+        """
+        session = self.session
+        try:
+            events_info = []
+    
+            # Query all events with related information
+            events = (
+                session.query(Event, Token, Document, User)
+                .join(Token, Event.tid == Token.tid)
+                .join(Document, Token.did == Document.did)
+                .join(User, Document.user_uid == User.uid)
+                .all()
+            )
+    
+            for event, token, document, user in events:
+                event_info = {
+                    'date': event.date,
+                    'token': token.token,
+                    'user_uid': user.uid,
+                    'did': document.did,
+                    'title': document.title,
+                }
+                events_info.append(event_info)
+    
+            return events_info
+    
+        except Exception as e:
+            print(f"Error retrieving events: {e}")
+            return None
+    
+        finally:
+            session.close()
+            
+    def get_documents(self):
+        """
+        Retrieve all documents with information including document ID (did), title, filename, user UID, and upload datetime.
+    
+        :return: A list of dictionaries containing document information.
+        """
+        session = self.session
+        try:
+            documents_info = []
+    
+            # Query all documents with related information
+            documents = (
+                session.query(Document, User)
+                .join(User, Document.user_uid == User.uid)
+                .all()
+            )
+    
+            for document, user in documents:
+                document_info = {
+                    'did': document.did,
+                    'title': document.title,
+                    'filename': document.filename,
+                    'user_uid': user.uid,
+                    'upload_datetime': document.upload_datetime,
+                }
+                documents_info.append(document_info)
+    
+            return documents_info
+    
+        except Exception as e:
+            print(f"Error retrieving documents: {e}")
+            return None
+    
+        finally:
+            session.close()
+            
+    def get_users(self):
+        """
+        Retrieve all users with information including user UID and valid until date.
+    
+        :return: A list of dictionaries containing user information.
+        """
+        session = self.session
+        try:
+            users_info = []
+    
+            # Query all users with related information
+            users = session.query(User).all()
+    
+            for user in users:
+                user_info = {
+                    'uid': user.uid,
+                    'valid_until': user.valid_until,
+                }
+                users_info.append(user_info)
+    
+            return users_info
+    
+        except Exception as e:
+            print(f"Error retrieving users: {e}")
+            return None
+    
+        finally:
+            session.close()
 
 
 
