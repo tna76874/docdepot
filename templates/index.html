@@ -118,7 +118,22 @@
             margin: 4vw 0;
             font-size: clamp(12px, 3.5vw, 18px);
         }
+
+        #downloadButton.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
     </style>
+    <script>
+        function disableButton() {
+            var downloadButton = document.getElementById("downloadButton");
+            downloadButton.classList.add("disabled");
+
+            setTimeout(function() {
+                downloadButton.classList.remove("disabled");
+            }, 10000);
+        }
+    </script>
 </head>
 <body>
     <header>
@@ -132,7 +147,7 @@
     {% if document_found|default(True)==True %}
     {% if is_valid==True %}
     <main>
-        <a href="{{ url_for('get_documents', token=token) }}" target="_blank">
+        <a href="{{ url_for('get_documents', token=token) }}" target="_blank" id="downloadButton" onclick="disableButton()">
             {{ document['title'] }}
         </a>
 
