@@ -325,6 +325,58 @@ class GetUsersResource(Resource):
         - A list of dictionaries containing user information.
         """
         return db.get_users()
+    
+class UpdateUserExpiryDateResource(Resource):
+    def put(self):
+        """
+        Endpoint for updating the 'valid_until' date of a user.
+
+        Request Body:
+        {
+            "user_uid": "User UID to be updated.",
+            "valid_until": "New 'valid_until' date for the user."
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            user_uid = data.get('user_uid')
+            valid_until = data.get('valid_until')
+
+            # Update the 'valid_until' date of the user
+            db.update_user_valid_until(user_uid, valid_until)
+
+            return {"message": f"User with UID {user_uid} updated successfully."}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+class SetAllUsersExpiryDateResource(Resource):
+    def put(self):
+        """
+        Endpoint for setting the 'valid_until' date for all users.
+
+        Request Body:
+        {
+            "valid_until": "New 'valid_until' date for all users."
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            valid_until = data.get('valid_until')
+
+            # Set the 'valid_until' date for all users
+            db.set_all_users_expiry_date(valid_until)
+
+            return {"message": f"All users' expiry date set to {valid_until} successfully."}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
 
 # Add routes to the API
 api.add_resource(DocumentResource, '/api/add_document')
@@ -338,7 +390,8 @@ api.add_resource(DDClientVersionResource, '/api/ddclient_version')
 api.add_resource(GetEventsResource, '/api/get_events')
 api.add_resource(GetDocumentsResource, '/api/get_documents')
 api.add_resource(GetUsersResource, '/api/get_users')
-
+api.add_resource(UpdateUserExpiryDateResource, '/api/update_user_expiry_date')
+api.add_resource(SetAllUsersExpiryDateResource, '/api/set_all_users_expiry_date')
 
 @app.route('/document/<token>')
 def get_documents(token):
