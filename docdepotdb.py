@@ -202,13 +202,22 @@ class DatabaseManager:
             if token:
                 document = token.document
                 if document:
+                    user = document.user
+    
+                    # Find the nearest valid_until among token, document, and user
+                    nearest_valid_until = min(
+                        token.valid_until,
+                        document.valid_until if document.valid_until else datetime.max.replace(tzinfo=local_timezone),
+                        user.valid_until if user.valid_until else datetime.max.replace(tzinfo=local_timezone),
+                    )
+    
                     return {
                         'did': document.did,
                         'title': document.title,
                         'filename': document.filename,
                         'upload_datetime': document.upload_datetime,
                         'user_uid': document.user_uid,
-                        'valid_until': token.valid_until,
+                        'valid_until': nearest_valid_until,
                     }
                 else:
                     print(f"Document not found for Token: {token_value}")

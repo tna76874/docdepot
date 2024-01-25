@@ -180,7 +180,7 @@
             </a>
         </div>
         <div class="footer-info">
-        Link gültig bis: {{ document['valid_until'].strftime('%d.%m.%Y %H:%M Uhr') }}</p>
+        Link gültig bis: {{ document['valid_until'].strftime('%d.%m.%Y') }}</p>
         {% if (average_time is not none) and (html_settings["show_respose_time"]|default(False) == True) %}
         <p>mittlere Abrufzeit ca. {{ average_time[0] }} {{ average_time[1] }}</p>
         {% endif %}
