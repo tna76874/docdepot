@@ -303,6 +303,55 @@ class DocDepotManager:
                 return f"Error: {response.status_code}, {error_message}"
             except ValueError:
                 return f"Error: {response.status_code}, Response content: {response.text}"
+            
+    def update_user_expiry_date(self, user_uid, valid_until):
+        """
+        Update the 'valid_until' date of a user.
+
+        Parameters:
+        - user_uid: User's unique identifier.
+        - valid_until: New 'valid_until' date for the user.
+
+        Returns:
+        - message: A success or error message.
+        """
+        url = urljoin(self.api_url+'/', 'update_user_expiry_date')
+        data = {'user_uid': user_uid, 'valid_until': valid_until}
+        response = requests.put(url, headers=self.headers, json=data)
+
+        if response.status_code == 200:
+            self.success = True
+            return {"message": f"User with UID {user_uid} updated successfully."}
+        else:
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
+
+    def set_all_users_expiry_date(self, valid_until):
+        """
+        Set the 'valid_until' date for all users.
+
+        Parameters:
+        - valid_until: New 'valid_until' date for all users.
+
+        Returns:
+        - message: A success or error message.
+        """
+        url = urljoin(self.api_url+'/', 'set_all_users_expiry_date')
+        data = {'valid_until': valid_until}
+        response = requests.put(url, headers=self.headers, json=data)
+
+        if response.status_code == 200:
+            self.success = True
+            return {"message": f"All users' expiry date set to {valid_until} successfully."}
+        else:
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
 
     def get_data(self):
         if self.success==True:
