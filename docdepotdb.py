@@ -403,6 +403,55 @@ class DatabaseManager:
         finally:
             session.close()
             
+    def update_user_valid_until(self, user_uid, new_valid_until):
+        """
+        Update the 'valid_until' date of a user.
+    
+        :param user_uid: The unique identifier (uid) of the user to be updated.
+        :param new_valid_until: The new 'valid_until' date for the user.
+        """
+        if not isinstance(new_valid_until, datetime):
+            try:
+                new_valid_until = datetime.fromisoformat(new_valid_until)
+            except (ValueError, TypeError):
+                raise ValueError("new_valid_until should be a datetime object or a string in ISO format.")
+    
+        session = self.session
+        try:
+            user = session.query(User).filter_by(uid=user_uid).first()
+            if user:
+                user.valid_until = new_valid_until
+                session.commit()
+            else:
+                print(f"User not found: {user_uid}")
+        except Exception as e:
+            print(f"Error updating user: {e}")
+        finally:
+            session.close()
+            
+    def set_all_users_expiry_date(self, new_expiry_date):
+        """
+        Set the 'valid_until' date for all users to a specific date.
+    
+        :param new_expiry_date: The new 'valid_until' date for all users.
+        """
+        if not isinstance(new_expiry_date, datetime):
+            try:
+                new_expiry_date = datetime.fromisoformat(new_expiry_date)
+            except (ValueError, TypeError):
+                raise ValueError("new_expiry_date should be a datetime object or a string in ISO format.")
+    
+        session = self.session
+        try:
+            users = session.query(User).all()
+            for user in users:
+                user.valid_until = new_expiry_date
+            session.commit()
+        except Exception as e:
+            print(f"Error updating expiry date for all users: {e}")
+        finally:
+            session.close()
+            
     def delete_expired_tokens_and_documents(self):
         """
         Delete all expired tokens and associated documents with no remaining tokens.
