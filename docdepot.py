@@ -40,7 +40,7 @@ else:
 
 # Initialize the DatabaseManager and cleanup expired files
 db = DatabaseManager(data=f'{datadir}/data.db', docdir = documentdir)
-db.delete_expired_tokens_and_documents()
+db.delete_expired_items()
 
 # Initialize Flask app and API
 app = Flask(__name__)

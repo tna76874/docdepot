@@ -342,7 +342,7 @@ class DatabaseManager:
 
         :param uid: The unique identifier (uid) of the user to be deleted.
         """
-        session = self.session
+        session = sessionmaker(bind=self.engine)()
         try:
             user = session.query(User).filter_by(uid=uid).first()
             if user:
@@ -425,6 +425,45 @@ class DatabaseManager:
             session.commit()
         except Exception as e:
             print(f"Error deleting expired tokens and documents: {e}")
+        finally:
+            session.close()
+            
+    def delete_expired_items(self):
+        """
+        Delete all expired tokens, documents, and users with no remaining documents.
+        """
+        session = self.session
+        try:
+            current_datetime = datetime.now(local_timezone)
+    
+            # Delete expired tokens
+            expired_tokens = session.query(Token).filter(Token.valid_until < current_datetime).all()
+            for token in expired_tokens:
+                # Delete associated events first
+                session.query(Event).filter_by(tid=token.tid).delete()
+                session.delete(token)
+    
+                # Check if the associated document has no remaining tokens
+                remaining_tokens = session.query(Token).filter_by(did=token.did).count()
+                if remaining_tokens == 0:
+                    # Delete the associated file
+                    doc_path = os.path.join(self.docdir, token.did)
+                    if os.path.exists(doc_path):
+                        os.remove(doc_path)
+    
+                    # Delete the document itself
+                    document = session.query(Document).filter_by(did=token.did).first()
+                    if document:
+                        session.delete(document)
+    
+            # Delete expired users
+            expired_users = session.query(User).filter(User.valid_until < current_datetime).all()
+            for user in expired_users:
+                self.delete_user(user.uid)
+    
+            session.commit()
+        except Exception as e:
+            print(f"Error deleting expired tokens, documents, and users: {e}")
         finally:
             session.close()
             
