@@ -137,6 +137,27 @@ class DatabaseManager:
         finally:
             session.close()
             
+    def delete_did_if_no_document_present(self):
+        """
+        Check the existence of files associated with each document in the database.
+        If a file does not exist, delete the document from the database.
+        """
+        session = self.session
+        try:
+            all_documents = session.query(Document).all()
+
+            for document in all_documents:
+                file_path = os.path.join(self.docdir, document.did)
+
+                if not os.path.exists(file_path):
+                    # File doesn't exist, delete the document from the database
+                    self.delete_document(document.did)
+
+        except Exception as e:
+            print(f"Error checking document file existence: {e}")
+        finally:
+            session.close()
+            
     def add_document(self, data):
         """
         Add a new document to the database.
