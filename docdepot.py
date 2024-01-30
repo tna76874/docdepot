@@ -12,6 +12,7 @@ import ddclient
 from datetime import datetime
 import json
 from functools import wraps
+import hashlib
 
 # Define directories and create them if they don't exist
 datadir = 'data'
@@ -69,6 +70,13 @@ class DocumentResource(Resource):
             data = request.form
             file = request.files.get('file')
 
+            if not file:
+                return {"error": "file is required"}, 400
+
+            # check if file is uploaded
+            if not file.filename:
+                return {"error": "file is required"}, 400
+
             dbdata = {
                 'title': data.get('title'),
                 'filename': data.get('filename'),
@@ -78,12 +86,20 @@ class DocumentResource(Resource):
             # Add document to the database
             did = db.add_document(dbdata)
 
-            if not file:
-                return {"error": "file is required"}, 400
-
             # Save the file to the ./documents/ directory
             file_path = f'./{documentdir}/{did}'
             file.save(file_path)
+            
+            # Verify the checksum of the saved file
+            with open(file_path, 'rb') as saved_file:
+                saved_file_content = saved_file.read()
+                saved_checksum = hashlib.sha256(saved_file_content).hexdigest()
+
+            if data.get('checksum', None) != saved_checksum:
+                # Delete the document and return an error if the checksums do not match
+                db.delete_document(did)
+                return {"error": "Checksum verification failed"}, 400
+
 
             # Add token for the document
             token = db.add_token(did)

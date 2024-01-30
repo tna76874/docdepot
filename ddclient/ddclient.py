@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 import json
 import argparse
 import os
+import hashlib
+
 
 
 try:
@@ -35,21 +37,57 @@ class DocDepotManager:
 
 
     def upload_pdf(self, **kwargs):
+        """
+        Uploads a PDF document to the server.
+
+        Parameters:
+        - title: Title of the document.
+        - filename: Name of the file.
+        - user_uid: User's unique identifier.
+        - file_path: Path to the PDF file to be uploaded.
+
+        Returns:
+        - If successful, sets self.success to True and self.token to the server response.
+        - If unsuccessful, sets self.success to False and returns an error message.
+
+        Raises:
+        - ValueError if required parameters are missing.
+        - ValueError if the specified file_path does not exist.
+        """
+
+        # Ensure all required parameters are provided
         required_params = ['title', 'filename', 'user_uid', 'file_path']
-        
-        # Überprüfen, ob alle erforderlichen Parameter übergeben wurden
         if not all(param in kwargs for param in required_params):
-            raise ValueError("Fehlende erforderliche Parameter. Stellen Sie sicher, dass Sie title, filename, user_uid und file_path übergeben.")
-        
-        self.data = {'title': kwargs['title'],
-                'filename': kwargs['filename'],
-                'user_uid': kwargs['user_uid']}
-        
-        files = {'file': (self.data['filename'], open(kwargs['file_path'], 'rb'))}
-        
-        url = urljoin(self.api_url+'/', 'add_document')
+            raise ValueError("Missing required parameters. Make sure to provide title, filename, user_uid, and file_path.")
+
+        # Check if the specified file exists
+        file_path = kwargs['file_path']
+        if not os.path.exists(file_path):
+            raise ValueError(f"The file '{file_path}' does not exist.")
+            
+        # Calculate the checksum of the file
+        with open(file_path, 'rb') as file:
+            file_content = file.read()
+            checksum = hashlib.sha256(file_content).hexdigest()
+
+        # Prepare data for the request
+        self.data = {
+            'title': kwargs['title'],
+            'filename': kwargs['filename'],
+            'user_uid': kwargs['user_uid'],
+            'checksum': checksum,
+        }
+
+        # Prepare the files dictionary for the request
+        files = {'file': (self.data['filename'], open(file_path, 'rb'))}
+
+        # Construct the URL for the API endpoint
+        url = urljoin(self.api_url + '/', 'add_document')
+
+        # Make the POST request to upload the document
         response = requests.post(url, headers=self.headers, data=self.data, files=files)
 
+        # Process the response
         if response.status_code == 201:
             self.success = True
             self.token = response.json()
