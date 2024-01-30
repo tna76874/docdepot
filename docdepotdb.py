@@ -94,6 +94,39 @@ class DatabaseManager:
         """
         Base.metadata.create_all(bind=self.engine)
         
+    def are_tokens_valid(self, token_list):
+        """
+        Check if a list of tokens is valid or not.
+
+        :param token_list: List of token strings to be checked.
+        :return: A dictionary where keys are tokens, and values are boolean indicating validity.
+        """
+        session = self.session
+        try:
+            token_validity_dict = {}
+
+            for token_str in token_list:
+                token = session.query(Token).filter(Token.token == token_str).first()
+
+                if token:
+                    document = self.get_document_from_token(token_str)
+                    if document:
+                        current_time = datetime.utcnow()
+                        isvalid = document['valid_until'] >= current_time
+                        token_validity_dict[token_str] = isvalid
+                    else:
+                        token_validity_dict[token_str] = False
+                else:
+                    # Token not found in the database
+                    token_validity_dict[token_str] = False
+
+            return token_validity_dict
+
+        except Exception as e:
+            print(f"Error checking token validity: {e}")
+        finally:
+            session.close()
+        
     def rename_users(self, rename_dict):
         """
         Rename users in the database based on the provided dictionary.

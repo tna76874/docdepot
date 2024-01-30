@@ -35,6 +35,30 @@ class DocDepotManager:
         if server_ddclient_version != local_ddclient_version:
             raise ValueError(f"DDClient version ({local_ddclient_version}) does not match server version ({server_ddclient_version}).")
 
+    def check_token_validity(self, token_list):
+        """
+        Check the validity of a list of tokens.
+
+        Parameters:
+        - token_list: List of tokens to be checked.
+
+        Returns:
+        - token_validity_dict: Dictionary indicating the validity of each token in the list.
+        """
+        url = urljoin(self.api_url + '/', 'check_token_validity')
+        response = requests.post(url, headers=self.headers, json={'token_list': token_list})
+
+        if response.status_code == 200:
+            self.success = True
+            self.token_validity_dict = response.json().get('token_validity_dict', {})
+            return self.token_validity_dict
+        else:
+            self.success = False
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
 
     def upload_pdf(self, **kwargs):
         """

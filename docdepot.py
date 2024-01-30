@@ -393,6 +393,40 @@ class SetAllUsersExpiryDateResource(Resource):
             return {"message": f"All users' expiry date set to {valid_until} successfully."}, 200
         except Exception as e:
             return {"error": str(e)}, 500
+        
+class CheckTokenValidityResource(Resource):
+    def post(self):
+        """
+        Endpoint for checking the validity of a list of tokens.
+
+        Request Body:
+        {
+            "token_list": ["token1", "token2", ...]
+        }
+
+        Returns:
+        {
+            "token_validity_dict": {
+                "token1": True/False,
+                "token2": True/False,
+                ...
+            }
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            token_list = data.get('token_list')
+
+            # Check the validity of the tokens
+            token_validity_dict = db.are_tokens_valid(token_list)
+
+            return {"token_validity_dict": token_validity_dict}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
 
 # Add routes to the API
 api.add_resource(DocumentResource, '/api/add_document')
@@ -408,6 +442,8 @@ api.add_resource(GetDocumentsResource, '/api/get_documents')
 api.add_resource(GetUsersResource, '/api/get_users')
 api.add_resource(UpdateUserExpiryDateResource, '/api/update_user_expiry_date')
 api.add_resource(SetAllUsersExpiryDateResource, '/api/set_all_users_expiry_date')
+api.add_resource(CheckTokenValidityResource, '/api/check_token_validity')
+
 
 @app.route('/document/<token>')
 def get_documents(token):
