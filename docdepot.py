@@ -430,6 +430,44 @@ class CheckTokenValidityResource(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
+class AddRedirectsResource(Resource):
+    def post(self):
+        """
+        Endpoint for adding or updating redirects.
+
+        Request Body:
+        {
+            "redirect_list": [
+                {
+                    "uid": "User's unique identifier",
+                    "did": "Document ID",
+                    "url": "Redirect URL",
+                    "valid_until": "Valid until date (optional)"
+                },
+                ...
+            ]
+        }
+
+        Returns:
+        {
+            "message": "Redirects added or updated successfully."
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            redirect_list = data.get('redirect_list')
+
+            # Add or update redirects
+            db.add_redirects(redirect_list)
+
+            return {"message": "Redirects added or updated successfully."}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
 # Add routes to the API
 api.add_resource(DocumentResource, '/api/add_document')
 api.add_resource(GenerateTokenResource, '/api/generate_token')
@@ -445,6 +483,7 @@ api.add_resource(GetUsersResource, '/api/get_users')
 api.add_resource(UpdateUserExpiryDateResource, '/api/update_user_expiry_date')
 api.add_resource(SetAllUsersExpiryDateResource, '/api/set_all_users_expiry_date')
 api.add_resource(CheckTokenValidityResource, '/api/check_token_validity')
+api.add_resource(AddRedirectsResource, '/api/add_redirects')
 
 
 @app.route('/r/<token>')

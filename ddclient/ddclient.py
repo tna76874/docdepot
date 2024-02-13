@@ -415,6 +415,26 @@ class DocDepotManager:
             except ValueError:
                 return f"Error: {response.status_code}, Response content: {response.text}"
 
+    def add_redirects(self, redirect_list):
+        """
+        Füge Weiterleitungen aus einer Liste von Dictionaries zur Datenbank hinzu oder aktualisiere sie.
+
+        :param redirect_list: Liste von Dictionaries, die Weiterleitungen repräsentieren.
+        """
+        url = urljoin(self.api_url + '/', 'add_redirects')
+        response = requests.post(url, headers=self.headers, json={'redirect_list': redirect_list})
+
+        if response.status_code == 200:
+            self.success = True
+            return {"message": "Redirects added or updated successfully."}
+        else:
+            self.success = False
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
+
     def get_data(self):
         if self.success==True:
             data = self.data
