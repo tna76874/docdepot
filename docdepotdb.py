@@ -4,7 +4,7 @@
 A simple database management system for storing users, documents, tokens, and events.
 """
 
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_, MetaData, inspect, text
 from sqlalchemy.orm import relationship, sessionmaker, Session, aliased, declarative_base
 from sqlalchemy.exc import IntegrityError
 import uuid
@@ -25,6 +25,7 @@ class Redirect(Base):
     did = Column(String, unique=True, nullable=True)
     url = Column(String)
     valid_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=365))
+    description = Column(String)
 
 class User(Base):
     """
@@ -105,6 +106,47 @@ class DatabaseManager:
         Create the database tables if they do not exist.
         """
         Base.metadata.create_all(bind=self.engine)
+        self.ensure_all_tables()
+        
+    def ensure_all_tables(self):
+        # Create a MetaData object
+        metadata = MetaData()
+    
+        # Bind the MetaData object with the existing database engine
+        metadata.reflect(bind=self.engine)
+    
+        # Iterate over all tables in the Base.metadata
+        for table_name, table in Base.metadata.tables.items():
+            # Get the existing table from the reflected metadata
+            existing_table = metadata.tables.get(table_name)
+    
+            # Check if the table does not exist in the database
+            if existing_table is None:
+                # If the table does not exist, create it
+                table.create(bind=self.engine)
+    
+                # Print a message indicating that the table has been created
+                print(f"Table '{table_name}' created.")
+            else:
+                # If the table already exists, check for missing columns
+                for column in table.columns:
+                    # Check if the column does not exist in the existing table
+                    if column.name not in existing_table.columns:
+                        # If the column does not exist, add it to the existing table
+                        new_column = Column(
+                            column.name,
+                            column.type,
+                            primary_key=column.primary_key,
+                            nullable=column.nullable,
+                            default=column.default,
+                            unique=column.unique
+                        )
+                        with self.engine.connect() as con:
+                            add_query = f"ALTER TABLE {table_name} ADD COLUMN {new_column.compile(dialect=self.engine.dialect)}"
+                            con.execute(text(add_query))
+    
+                        # Print a message indicating that the column has been created
+                        print(f"Column '{column.name}' added to table '{table_name}'.")
         
     def _check_if_redirect_is_valid(self, redirect):
         try:
