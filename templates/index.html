@@ -174,7 +174,7 @@
 
         {% if redirect is not none %}
         <div class="redirect-button-container">
-            <a href="{{ redirect['url'] }}" target="_blank" id="redirectButton">
+            <a href="r/{{ token }}" target="_blank" id="redirectButton">
                 {{ redirect['description'] if redirect['description'] is not none else 'Weiterleitung' }}
             </a>
         </div>
