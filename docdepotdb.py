@@ -171,7 +171,6 @@ class DatabaseManager:
                 valid_until = redirect_data.get('valid_until')
                 if valid_until:
                     valid_until = self._ensure_datetime(valid_until)                    
-                    valid_until = valid_until.astimezone(local_timezone)
 
                 if (uid is None and did is None) or (uid is not None and did is not None):
                     raise ValueError("Exactly one of 'uid' and 'did' must be defined.")
