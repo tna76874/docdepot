@@ -121,7 +121,7 @@ class DatabaseManager:
     def get_redirect(self, token):
         """
         Retrieve a redirect corresponding to a given token, preferring 'did' (Document ID) if existent,
-        then 'sid' (Session ID) if existent, otherwise None.
+        then 'uid' (User ID) if existent, otherwise None.
 
         :param token: The token for which to retrieve the redirect.
         :return: The URL of the redirect if found, otherwise None.

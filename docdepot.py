@@ -4,7 +4,7 @@
 Depose Files: A simple file deposition API using Flask.
 """
 
-from flask import Flask, jsonify, send_file, render_template, request
+from flask import Flask, jsonify, send_file, render_template, request, url_for, redirect
 from flask_restful import Api, Resource
 import os
 from docdepotdb import *
@@ -21,12 +21,14 @@ _ = [os.makedirs(path) for path in [datadir, documentdir] if not os.path.exists(
 
 # Set default API key (you can also use environment variables)
 apikey = os.environ.get("DOCDEPOT_API_KEY", "test")
+# default redirect target
+default_redirect = os.environ.get("DOCDEPOT_DEFAULT_REDIRECT", None)
 # WEBSITE SETTINGS
 html_settings = {
     "show_info": os.environ.get("DOCDEPOT_SHOW_INFO", "False").lower() == "true",
     "show_response_time": os.environ.get("DOCDEPOT_SHOW_RESPONSE_TIME", "False").lower() == "true",
     "show_timestamp": os.environ.get("DOCDEPOT_SHOW_TIMESTAMP", "False").lower() == "true",
-    "github_repo": os.environ.get("DOCDEPOT_GITHUB_REPO", "https://github.com/tna76874/docdepot"),    
+    "github_repo": os.environ.get("DOCDEPOT_GITHUB_REPO", "https://github.com/tna76874/docdepot"),
 }
 
 # read version as commit hash
@@ -444,6 +446,33 @@ api.add_resource(UpdateUserExpiryDateResource, '/api/update_user_expiry_date')
 api.add_resource(SetAllUsersExpiryDateResource, '/api/set_all_users_expiry_date')
 api.add_resource(CheckTokenValidityResource, '/api/check_token_validity')
 
+
+@app.route('/r/<token>')
+def handle_redirect(token):
+    """
+    Handle redirects based on the provided token.
+
+    Parameters:
+    - token: Unique token for performing the redirect.
+
+    Returns:
+    - Redirect to the URL associated with the token, if found.
+    - Error if redirect not found.
+    """
+    try:
+        document = db.get_document_from_token(token)
+        if document:
+            redirect_url = db.get_redirect(token)
+            if redirect_url:
+                return redirect(redirect_url)
+            elif default_redirect:
+                return redirect(default_redirect)
+            else:
+                return redirect(url_for('render_index', token=token))
+        else:
+            return redirect(url_for('empty_page'))
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 @app.route('/document/<token>')
 def get_documents(token):
