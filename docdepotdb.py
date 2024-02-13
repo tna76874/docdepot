@@ -6,6 +6,7 @@ A simple database management system for storing users, documents, tokens, and ev
 
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_
 from sqlalchemy.orm import relationship, sessionmaker, Session, aliased, declarative_base
+from sqlalchemy.exc import IntegrityError
 import uuid
 from datetime import datetime, timedelta, timezone
 import os
@@ -13,6 +14,17 @@ import os
 local_timezone = timezone(timedelta(hours=1))
 
 Base = declarative_base()
+
+class Redirect(Base):
+    """
+    Class representing a redirect in the database.
+    """
+    __tablename__ = 'redirects'
+    rid = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    uid = Column(String, unique=True, nullable=True)
+    did = Column(String, unique=True, nullable=True)
+    url = Column(String)
+    valid_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=365))
 
 class User(Base):
     """
@@ -93,6 +105,87 @@ class DatabaseManager:
         Create the database tables if they do not exist.
         """
         Base.metadata.create_all(bind=self.engine)
+        
+    def _check_if_redirect_is_valid(self, redirect):
+        try:
+            if redirect:
+                if redirect.valid_until >= datetime.now(local_timezone).replace(tzinfo=None):
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        except:
+            return False
+        
+    def get_redirect(self, token):
+        """
+        Retrieve a redirect corresponding to a given token, preferring 'did' (Document ID) if existent,
+        then 'sid' (Session ID) if existent, otherwise None.
+
+        :param token: The token for which to retrieve the redirect.
+        :return: The URL of the redirect if found, otherwise None.
+        """
+        user_info = self.get_document_from_token(token)
+        if not user_info:
+            return None
+        session = self.session
+        try:
+            redirect = session.query(Redirect).filter(Redirect.did == user_info.get('did')).first()
+                           
+            if self._check_if_redirect_is_valid(redirect):
+                return redirect.url
+            else:
+                redirect = session.query(Redirect).filter(Redirect.uid == user_info.get('user_uid')).first()
+                if self._check_if_redirect_is_valid(redirect):
+                    return redirect.url
+                else:
+                    return None
+
+        except Exception as e:
+            print(f"Error retrieving redirect: {e}")
+        finally:
+            session.close()
+
+
+    def add_redirects(self, redirect_list):
+        """
+        Add or update redirects from a list of dictionaries to the database.
+
+        :param redirect_list: List of dictionaries representing redirects.
+        """
+        session = self.session
+        try:
+            for redirect_data in redirect_list:
+                uid = redirect_data.get('uid')
+                did = redirect_data.get('did')
+                url = redirect_data.get('url')
+                valid_until = redirect_data.get('valid_until')
+                if valid_until:
+                    valid_until = valid_until.astimezone(local_timezone)
+
+                if (uid is None and did is None) or (uid is not None and did is not None):
+                    raise ValueError("Exactly one of 'uid' and 'did' must be defined.")
+
+                redirect = session.query(Redirect).filter((Redirect.uid == uid) | (Redirect.did == did)).first()
+
+                if redirect:
+                    redirect.url = url
+                    if valid_until:
+                        redirect.valid_until = valid_until
+                else:
+                    new_redirect = Redirect(uid=uid, did=did, url=url, valid_until=valid_until)
+                    session.add(new_redirect)
+
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            print(f"Integrity error occurred: {e}")
+        except Exception as e:
+            session.rollback()
+            print(f"Error adding or updating redirects: {e}")
+        finally:
+            session.close()
         
     def are_tokens_valid(self, token_list):
         """
