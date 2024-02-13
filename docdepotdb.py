@@ -71,7 +71,9 @@ class Event(Base):
     eid = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(DateTime, default=lambda: datetime.now(local_timezone))
     tid = Column(Integer, ForeignKey('tokens.tid'))
+    event = Column(String)
     token = relationship('Token', back_populates='events', foreign_keys=[tid])
+    
 
 class DatabaseManager:
     """
@@ -147,6 +149,13 @@ class DatabaseManager:
     
                         # Print a message indicating that the column has been created
                         print(f"Column '{column.name}' added to table '{table_name}'.")
+
+                        # Check if the table name is 'events' and column name is 'event'
+                        if table_name == 'events' and 'event' in [col.name for col in table.columns]:
+                            events_with_nan = self.session.query(Event).filter(Event.event == None).all()
+                            for event in events_with_nan:
+                                event.event = 'download'
+                            self.session.commit()
         
     def _check_if_redirect_is_valid(self, redirect):
         try:
@@ -439,7 +448,7 @@ class DatabaseManager:
         finally:
             session.close()
 
-    def add_event(self, token_value):
+    def add_event(self, token_value, event=None):
         """
         Add a new event to the database associated with a given token.
 
@@ -450,7 +459,7 @@ class DatabaseManager:
         try:
             token = session.query(Token).filter_by(token=token_value).first()
             if token:
-                new_event = Event(tid=token.tid)
+                new_event = Event(tid=token.tid, event=event)
                 session.add(new_event)
                 session.commit()
         except Exception as e:
@@ -469,7 +478,7 @@ class DatabaseManager:
         try:
             token = session.query(Token).filter_by(token=token_value).first()
             if token:
-                download_event_count = session.query(Event).filter_by(tid=token.tid).count()
+                download_event_count = session.query(Event).filter_by(tid=token.tid, event='download').count()
                 return download_event_count
             else:
                 return None
@@ -947,6 +956,7 @@ class DatabaseManager:
             for event, token, document, user in events:
                 event_info = {
                     'date': event.date,
+                    'event': event.event,
                     'token': token.token,
                     'user_uid': user.uid,
                     'did': document.did,

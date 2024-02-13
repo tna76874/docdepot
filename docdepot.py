@@ -530,7 +530,7 @@ def get_documents(token):
         if document:
             current_time = datetime.utcnow()
             if document['valid_until'] >= current_time:
-                db.add_event(token)
+                db.add_event(token, event = 'download')
                 file_path = f'{documentdir}/{document["did"]}'
                 return send_file(file_path, as_attachment=False, download_name=document["filename"])
             else:
