@@ -175,7 +175,15 @@ class DatabaseManager:
                 if (uid is None and did is None) or (uid is not None and did is not None):
                     raise ValueError("Exactly one of 'uid' and 'did' must be defined.")
 
-                redirect = session.query(Redirect).filter((Redirect.uid == uid) | (Redirect.did == did)).first()
+                if uid is None and did is None:
+                    continue
+
+                if uid is None:
+                    redirect = session.query(Redirect).filter(Redirect.uid == did).first()
+                elif did is None:
+                    redirect = session.query(Redirect).filter(Redirect.uid == uid).first()
+                else:
+                    continue
 
                 if redirect:
                     redirect.url = url
@@ -186,6 +194,7 @@ class DatabaseManager:
                     session.add(new_redirect)
 
             session.commit()
+                
         except IntegrityError as e:
             session.rollback()
             print(f"Integrity error occurred: {e}")
