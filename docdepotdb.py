@@ -146,6 +146,14 @@ class DatabaseManager:
             print(f"Error retrieving redirect: {e}")
         finally:
             session.close()
+            
+    def _ensure_datetime(self, time_object):
+        if not isinstance(time_object, datetime):
+            try:
+                time_object = datetime.fromisoformat(time_object)
+            except (ValueError, TypeError):
+                raise ValueError("new_expiry_date should be a datetime object or a string in ISO format.")  
+        return time_object
 
 
     def add_redirects(self, redirect_list):
@@ -162,6 +170,7 @@ class DatabaseManager:
                 url = redirect_data.get('url')
                 valid_until = redirect_data.get('valid_until')
                 if valid_until:
+                    valid_until = self._ensure_datetime(valid_until)                    
                     valid_until = valid_until.astimezone(local_timezone)
 
                 if (uid is None and did is None) or (uid is not None and did is not None):
