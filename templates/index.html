@@ -123,6 +123,27 @@
             opacity: 0.5;
             pointer-events: none;
         }
+
+        #redirectButton {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 20px 0;
+            text-decoration: none;
+            color: #000;
+            background-color: #ccc;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #redirectButton:hover {
+            background-color: #999;
+        }
+
+        .redirect-button-container {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
     </style>
     <script>
         function disableButton() {
@@ -150,6 +171,14 @@
         <a href="{{ url_for('get_documents', token=token) }}" target="_blank" id="downloadButton" onclick="disableButton()">
             {{ document['title'] }}
         </a>
+
+        {% if redirect is not none %}
+        <div class="redirect-button-container">
+            <a href="{{ redirect['url'] }}" target="_blank" id="redirectButton">
+                {{ redirect['description'] if redirect['description'] is not none else 'Weiterleitung' }}
+            </a>
+        </div>
+        {% endif %}
 
         {% if html_settings["show_info"]|default(False) == True %}
         {% if count > 0 %}

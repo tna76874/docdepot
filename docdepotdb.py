@@ -176,11 +176,11 @@ class DatabaseManager:
             redirect = session.query(Redirect).filter(Redirect.did == user_info.get('did')).first()
                            
             if self._check_if_redirect_is_valid(redirect):
-                return redirect.url
+                return {'url': redirect.url, 'description': redirect.description}
             else:
                 redirect = session.query(Redirect).filter(Redirect.uid == user_info.get('user_uid')).first()
                 if self._check_if_redirect_is_valid(redirect):
-                    return redirect.url
+                    return {'url': redirect.url, 'description': redirect.description}
                 else:
                     return None
 

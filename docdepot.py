@@ -442,7 +442,8 @@ class AddRedirectsResource(Resource):
                     "uid": "User's unique identifier",
                     "did": "Document ID",
                     "url": "Redirect URL",
-                    "valid_until": "Valid until date (optional)"
+                    "valid_until": "Valid until date (optional)",
+                    "description": "This is a description",
                 },
                 ...
             ]
@@ -503,7 +504,7 @@ def handle_redirect(token):
         if document:
             redirect_url = db.get_redirect(token)
             if redirect_url:
-                return redirect(redirect_url)
+                return redirect(redirect_url['url'])
             elif default_redirect:
                 return redirect(default_redirect)
             else:
@@ -560,6 +561,8 @@ def render_index(token):
             
             average_time = db.cluster_time_span(db.calculate_average_time_for_token(token))
             
+            redirect_url = db.get_redirect(token)
+            
             if first_viewed!=None:
                 first_viewed = first_viewed.strftime('%d.%m.%Y %H:%M:%S')
             return render_template(
@@ -570,7 +573,8 @@ def render_index(token):
                 first_viewed=first_viewed,
                 is_valid=isvalid,
                 average_time=average_time,
-                html_settings = html_settings
+                html_settings = html_settings,
+                redirect = redirect_url
             )
         else:
             return render_template('index.html', document_found=False, html_settings=html_settings)
