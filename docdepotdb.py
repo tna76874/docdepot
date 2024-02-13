@@ -210,6 +210,7 @@ class DatabaseManager:
                 uid = redirect_data.get('uid')
                 did = redirect_data.get('did')
                 url = redirect_data.get('url')
+                description = redirect_data.get('description')
                 valid_until = redirect_data.get('valid_until')
                 if valid_until:
                     valid_until = self._ensure_datetime(valid_until)                    
@@ -221,7 +222,7 @@ class DatabaseManager:
                     continue
 
                 if uid is None:
-                    redirect = session.query(Redirect).filter(Redirect.uid == did).first()
+                    redirect = session.query(Redirect).filter(Redirect.did == did).first()
                 elif did is None:
                     redirect = session.query(Redirect).filter(Redirect.uid == uid).first()
                 else:
@@ -229,10 +230,11 @@ class DatabaseManager:
 
                 if redirect:
                     redirect.url = url
+                    redirect.description = description
                     if valid_until:
                         redirect.valid_until = valid_until
                 else:
-                    new_redirect = Redirect(uid=uid, did=did, url=url, valid_until=valid_until)
+                    new_redirect = Redirect(uid=uid, did=did, url=url, valid_until=valid_until, description = description)
                     session.add(new_redirect)
 
             session.commit()
