@@ -8,10 +8,17 @@ from sqlalchemy import create_engine, Column, String, Integer, DateTime, Foreign
 from sqlalchemy.orm import relationship, sessionmaker, Session, aliased, declarative_base
 from sqlalchemy.exc import IntegrityError
 import uuid
+import pytz
 from datetime import datetime, timedelta, timezone
 import os
 
-local_timezone = timezone(timedelta(hours=1))
+## timezone settings
+def get_german_timezone():
+    berlin = pytz.timezone('Europe/Berlin')
+    return berlin.localize(datetime.now()).astimezone(berlin).tzinfo
+
+local_timezone = get_german_timezone()
+##
 
 Base = declarative_base()
 
