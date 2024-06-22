@@ -642,6 +642,11 @@ def render_index(token):
             
             redirect_url = db.get_redirect(token)
             
+            attachment_list = db.get_attachments_for_token(token)
+            for attachment in attachment_list:
+                attachment['uploaded'] = attachment['uploaded'].strftime('%d.%m.%Y %H:%M Uhr')
+
+            
             if first_viewed!=None:
                 first_viewed = first_viewed.strftime('%d.%m.%Y %H:%M:%S')
             return render_template(
@@ -653,7 +658,8 @@ def render_index(token):
                 is_valid=isvalid,
                 average_time=average_time,
                 html_settings = html_settings,
-                redirect = redirect_url
+                redirect = redirect_url,
+                attachment_list=attachment_list,
             )
         else:
             return render_template('index.html', document_found=False, html_settings=html_settings)

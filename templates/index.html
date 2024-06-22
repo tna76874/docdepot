@@ -144,17 +144,56 @@
             width: 100%;
             margin-top: 10px;
         }
-    </style>
-    <script>
-        function disableButton() {
-            var downloadButton = document.getElementById("downloadButton");
-            downloadButton.classList.add("disabled");
 
-            setTimeout(function() {
-                downloadButton.classList.remove("disabled");
-            }, 10000);
+        .attachment-list {
+            list-style-type: none;
+            padding: 0;
         }
-    </script>
+
+        .attachment-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .attachment-item a {
+            color: #bddbfc;
+            text-decoration: none;
+        }
+
+        .attachment-item a:hover {
+            text-decoration: underline;
+        }
+
+        .attachment-item strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        h3 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-section label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -199,6 +238,23 @@
             </div>
         {% endif %}
         {% endif %}
+        
+        <h3>Anhänge</h3>
+        <div class="upload-section">
+            <input type="file" id="fileInput" name="file">
+            <label for="fileInput">Anhang hochladen</label>
+        </div>
+        {% if attachment_list|default([])!=[] %}
+            <ul class="attachment-list">
+                {% for attachment in attachment_list %}
+                    <li class="attachment-item">
+                        <a href="/attachment/{{ attachment.aid }}">{{ attachment.name }}</a> {{ attachment.uploaded }}<br>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+        <p>Zu diesem Dokument wurden keine Anhänge hochgeladen.</p>
+        {% endif %}
 
     </main>
 
@@ -242,5 +298,49 @@
         </div>
     </footer>
     {% endif %}
+
+
+    <script>
+        function disableButton() {
+            var downloadButton = document.getElementById("downloadButton");
+            downloadButton.classList.add("disabled");
+
+            setTimeout(function() {
+                downloadButton.classList.remove("disabled");
+            }, 10000);
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            var fileInput = document.getElementById('fileInput');
+            
+            if (fileInput) {
+                fileInput.addEventListener('change', function(event) {
+                    var file = event.target.files[0];
+                    if (file) {
+                        var formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('token', '{{ token }}');
+
+                        fetch('/api/add_attachment', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                alert('Attachment uploaded successfully!');
+                                location.reload();
+                            } else {
+                                alert('Error: ' + data.error);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred while uploading the attachment.');
+                        });
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

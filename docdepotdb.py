@@ -4,7 +4,7 @@
 A simple database management system for storing users, documents, tokens, and events.
 """
 from contextlib import contextmanager
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_, MetaData, inspect, text
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_, MetaData, inspect, text, desc
 from sqlalchemy.orm import relationship, sessionmaker, Session, aliased, declarative_base
 from sqlalchemy.exc import IntegrityError
 import uuid
@@ -190,7 +190,7 @@ class DatabaseManager:
             token_obj = session.query(Token).filter(Token.token == token).first()
             if token_obj:
                 did = token_obj.document.did
-                attachments = session.query(Attachment).filter(Attachment.did == did).all()
+                attachments = session.query(Attachment).filter(Attachment.did == did).order_by(desc(Attachment.uploaded)).all()
                 attachments_list = []
                 for attachment in attachments:
                     attachment_info = self.get_attachment_info(attachment.aid)
