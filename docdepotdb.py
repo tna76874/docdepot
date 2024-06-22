@@ -185,6 +185,33 @@ class DatabaseManager:
                                 event.event = 'download'
                             self.session.commit()
 
+    def get_attachments_for_token(self, token):
+        with self.get_session() as session:
+            token_obj = session.query(Token).filter(Token.token == token).first()
+            if token_obj:
+                did = token_obj.document.did
+                attachments = session.query(Attachment).filter(Attachment.did == did).all()
+                attachments_list = []
+                for attachment in attachments:
+                    attachment_info = self.get_attachment_info(attachment.aid)
+                    if attachment_info:
+                        attachments_list.append(attachment_info)
+                return attachments_list
+            else:
+                return []
+
+    def get_attachment_info(self, aid):
+        with self.get_session() as session:
+            attachment = session.query(Attachment).filter(Attachment.aid == aid).first()
+            if attachment:
+                return {
+                    'aid': attachment.aid,
+                    'name': attachment.name,
+                    'uploaded': attachment.uploaded
+                }
+            else:
+                return None
+
     def add_attachment(self, **kwargs):
         with self.get_session() as session:
             token = kwargs.get('token')

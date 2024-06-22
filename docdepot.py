@@ -597,6 +597,27 @@ def get_documents(token):
             return render_template('index.html', document_found=False, html_settings=html_settings)
     except Exception as e:
         return {"error": str(e)}, 500
+    
+@app.route('/attachment/<aid>')
+def get_attachment(aid):
+    """
+    Retrieve and serve the requested attachment.
+
+    Parameters:
+    - aid: Attachment ID for accessing the attachment.
+
+    Returns:
+    - File response or error if attachment not found.
+    """
+    try:
+        attachment_info = db.get_attachment_info(aid)
+        if attachment_info:
+            file_path = f'{attachmentdir}/{aid}'
+            return send_file(file_path, as_attachment=False, download_name=attachment_info["name"])
+        else:
+            return redirect(url_for('render_index', token=token))
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 @app.route('/<token>')
 def render_index(token):
