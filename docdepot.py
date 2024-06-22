@@ -71,6 +71,12 @@ class AttachmentResource(Resource):
             # check if file is uploaded
             if not file.filename:
                 return {"error": "file is required"}, 400
+            
+            # Check file size (max 15MB = 15 * 1024 * 1024 bytes)
+            max_file_size = 15 * 1024 * 1024  # 15MB
+            if len(file.read()) > max_file_size:
+                return {"error": "Die Datei muss kleiner als 15MB sein!"}, 400
+            file.seek(0)
 
             dbdata = {
                 'token': data.get('token'),
