@@ -255,7 +255,7 @@
                 {% endfor %}
             </ul>
         {% else %}
-        <p>Zu diesem Dokument wurden keine Anhänge hochgeladen.</p>
+        <p>Zu diesem Dokument wurden keine Verbesserungen hochgeladen.</p>
         {% endif %}
 
         {% if html_settings["show_info"]|default(False) == True %}
@@ -336,38 +336,42 @@
                 downloadButton.classList.remove("disabled");
             }, 10000);
         }
+
+        function handleFileUpload() {
+                var fileInput = document.getElementById('fileInput');
+                
+                if (fileInput) {
+                    fileInput.addEventListener('change', function(event) {
+                        var file = event.target.files[0];
+                        if (file) {
+                            var formData = new FormData();
+                            formData.append('file', file);
+                            formData.append('token', '{{ token }}');
+
+                            fetch('/api/add_attachment', {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert('Error: ' + data.error);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Fehler beim Hochladen!');
+                            });
+                        }
+                    });
+                }
+            }
+
         document.addEventListener('DOMContentLoaded', function() {
             adjustFooterSpace()
-
-            var fileInput = document.getElementById('fileInput');
-            
-            if (fileInput) {
-                fileInput.addEventListener('change', function(event) {
-                    var file = event.target.files[0];
-                    if (file) {
-                        var formData = new FormData();
-                        formData.append('file', file);
-                        formData.append('token', '{{ token }}');
-
-                        fetch('/api/add_attachment', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                location.reload();
-                            } else {
-                                alert('Error: ' + data.error);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('Fehler beim Hochladen!');
-                        });
-                    }
-                });
-            }
+            handleFileUpload()
         });
     </script>
 </body>
