@@ -13,23 +13,21 @@ from datetime import datetime
 import json
 from functools import wraps
 import hashlib
+from helper import *
 
 # Define directories and create them if they don't exist
 datadir = 'data'
 documentdir = f'{datadir}/documents'
 _ = [os.makedirs(path) for path in [datadir, documentdir] if not os.path.exists(path)]
 
+# ENV VARS
+env_vars = EnvironmentConfigProvider()
 # Set default API key (you can also use environment variables)
-apikey = os.environ.get("DOCDEPOT_API_KEY", "test")
+apikey = env_vars.apikey
 # default redirect target
-default_redirect = os.environ.get("DOCDEPOT_DEFAULT_REDIRECT", None)
+default_redirect = env_vars.default_redirect
 # WEBSITE SETTINGS
-html_settings = {
-    "show_info": os.environ.get("DOCDEPOT_SHOW_INFO", "False").lower() == "true",
-    "show_response_time": os.environ.get("DOCDEPOT_SHOW_RESPONSE_TIME", "False").lower() == "true",
-    "show_timestamp": os.environ.get("DOCDEPOT_SHOW_TIMESTAMP", "False").lower() == "true",
-    "github_repo": os.environ.get("DOCDEPOT_GITHUB_REPO", "https://github.com/tna76874/docdepot"),
-}
+html_settings = env_vars._get_html_configs()
 
 # read version as commit hash
 commit_hash_file='COMMIT_HASH'
@@ -43,7 +41,8 @@ else:
 
 # Initialize the DatabaseManager and cleanup expired files
 db = DatabaseManager(data=f'{datadir}/data.db', docdir = documentdir)
-db.delete_expired_items()
+if env_vars.cleanup_db_on_start:
+    db.delete_expired_items()
 
 # Initialize Flask app and API
 app = Flask(__name__)
