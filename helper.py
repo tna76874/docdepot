@@ -9,6 +9,7 @@ class EnvironmentConfigProvider:
     def __init__(self):
         self.apikey = os.environ.get("DOCDEPOT_API_KEY", "test")
         self.default_redirect = os.environ.get("DOCDEPOT_DEFAULT_REDIRECT", None)
+        self.enable_redirect = os.environ.get("DOCDEPOT_ENABLE_REDIRECT", "True").lower() == "true"
         self.show_info = os.environ.get("DOCDEPOT_SHOW_INFO", "False").lower() == "true"
         self.show_response_time = os.environ.get("DOCDEPOT_SHOW_RESPONSE_TIME", "False").lower() == "true"
         self.show_timestamp = os.environ.get("DOCDEPOT_SHOW_TIMESTAMP", "False").lower() == "true"
@@ -29,7 +30,8 @@ class EnvironmentConfigProvider:
             "show_info": self.show_info,
             "show_response_time": self.show_response_time,
             "show_timestamp": self.show_timestamp,
-            "github_repo": self.github_repo
+            "github_repo": self.github_repo,
+            "enable_redirect" : self.enable_redirect,
         }
         return html_configs
 
