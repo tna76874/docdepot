@@ -4,6 +4,26 @@
 helper modules
 """
 import os
+import requests
+
+class PushNotify:
+    def __init__(self, host=None, token=None, **kwargs):
+        if host is None or token is None:
+            raise ValueError("Host and token must be provided.")
+        self.host = host
+        self.token = token
+        self.payload = {
+                            "priority": 2,
+                            "title": 'DocDepot',
+                        }
+        self.payload.update(kwargs)
+        
+    def send(self, message):
+        url = f"{self.host}/message?token={self.token}"
+        payload = self.payload.copy()
+        payload['message'] = message
+        response = requests.post(url, json=payload)
+        return response.status_code == 200
 
 class EnvironmentConfigProvider:
     def __init__(self):
@@ -16,13 +36,20 @@ class EnvironmentConfigProvider:
         self.github_repo = os.environ.get("DOCDEPOT_GITHUB_REPO", "https://github.com/tna76874/docdepot")
         self.cleanup_db_on_start = os.environ.get("DOCDEPOT_CLEANUP_ON_START", "True").lower() == "true"
         
+        self.gotify_host = self._read_var('GOTIFY_HOST')
+        self.gotify_token = self._read_var('GOTIFY_TOKEN')
+        
     def _read_var(self, var_name):
         value = os.environ.get(var_name)
         return value if value != "" else None
 
     def get_api_key(self):
         return self.apikey
-
+    
+    def _get_gotify(self):
+        if self.gotify_host is not None and self.gotify_token is not None:
+            return PushNotify(self.gotify_host, self.gotify_token, title = 'DocDepot')
+        return None
 
     def _get_html_configs(self):
         html_configs = {
@@ -34,6 +61,8 @@ class EnvironmentConfigProvider:
             "enable_redirect" : self.enable_redirect,
         }
         return html_configs
+
+
 
 if __name__ == '__main__':
     pass

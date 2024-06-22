@@ -30,6 +30,9 @@ default_redirect = env_vars.default_redirect
 # WEBSITE SETTINGS
 html_settings = env_vars._get_html_configs()
 
+# init gotify, if set
+gotify = env_vars._get_gotify()
+
 # read version as commit hash
 commit_hash_file='COMMIT_HASH'
 if os.path.exists(commit_hash_file):
@@ -95,6 +98,9 @@ class AttachmentResource(Resource):
                     "aid": aid,
                     "status": "success"
                 }
+                if gotify:
+                    gotify.send(f'{request.scheme}://{request.host}/{dbdata["token"]}')
+                    
                 return response, 201
             else:
                 response = {
