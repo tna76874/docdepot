@@ -371,6 +371,17 @@ def convert_datetimes_to_strings(data_func):
 
     return wrapper
 
+class GetAttachmentListResource(Resource):
+    @convert_datetimes_to_strings
+    def get(self):
+        """
+        Endpoint for retrieving all attachments.
+
+        Returns:
+        - A list of dictionaries containing attachment information.
+        """
+        return db.get_all_attachments()
+
 class GetEventsResource(Resource):
     @convert_datetimes_to_strings
     def get(self):
@@ -528,6 +539,7 @@ class AddRedirectsResource(Resource):
             return {"message": "Redirects added or updated successfully."}, 200
         except Exception as e:
             return {"error": str(e)}, 500
+        
 
 # Add routes to the API
 api.add_resource(AttachmentResource, '/api/add_attachment')
@@ -542,6 +554,7 @@ api.add_resource(DDClientVersionResource, '/api/ddclient_version')
 api.add_resource(GetEventsResource, '/api/get_events')
 api.add_resource(GetDocumentsResource, '/api/get_documents')
 api.add_resource(GetUsersResource, '/api/get_users')
+api.add_resource(GetAttachmentListResource, '/api/get_attachments')
 api.add_resource(UpdateUserExpiryDateResource, '/api/update_user_expiry_date')
 api.add_resource(SetAllUsersExpiryDateResource, '/api/set_all_users_expiry_date')
 api.add_resource(CheckTokenValidityResource, '/api/check_token_validity')

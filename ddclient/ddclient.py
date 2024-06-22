@@ -322,6 +322,28 @@ class DocDepotManager:
             except ValueError:
                 return f"Error: {response.status_code}, Response content: {response.text}"
             
+    def get_attachments(self):
+        """
+        Retrieve all attachments.
+    
+        Returns:
+        - A list of dictionaries containing attachment information.
+        """
+        url = urljoin(self.api_url + '/', 'get_attachments')
+        response = requests.get(url, headers=self.headers)
+    
+        if response.status_code == 200:
+            self.success = True
+            attachments_info = response.json()
+            return attachments_info if attachments_info else {"message": "No attachments found."}
+        else:
+            self.success = False
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
+            
     def get_documents(self):
         """
         Retrieve documents for all users.

@@ -5,7 +5,7 @@ A simple database management system for storing users, documents, tokens, and ev
 """
 from contextlib import contextmanager
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_, MetaData, inspect, text, desc
-from sqlalchemy.orm import relationship, sessionmaker, Session, aliased, declarative_base
+from sqlalchemy.orm import relationship, sessionmaker, Session, aliased, declarative_base, joinedload
 from sqlalchemy.exc import IntegrityError
 import uuid
 import pytz
@@ -184,6 +184,31 @@ class DatabaseManager:
                             for event in events_with_nan:
                                 event.event = 'download'
                             self.session.commit()
+                            
+    def get_all_attachments(self):
+        with self.get_session() as session:
+            attachments = (
+                session.query(Attachment, Document, User, Token)
+                .join(Document, Attachment.did == Document.did)
+                .join(User, Document.user_uid == User.uid)
+                .join(Token, Token.did == Document.did)
+                .order_by(desc(Attachment.uploaded))
+                .all()
+            )
+
+            attachments_list = []
+            for attachment, document, user, token in attachments:
+                attachment_info = {
+                    'aid': attachment.aid,
+                    'uid': user.uid,
+                    'did': document.did,
+                    'token': token.token,
+                    'name': attachment.name,
+                    'uploaded': attachment.uploaded,
+                }
+                attachments_list.append(attachment_info)
+
+            return attachments_list
 
     def get_attachments_for_token(self, token):
         with self.get_session() as session:
