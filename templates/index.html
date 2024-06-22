@@ -240,6 +240,23 @@
             </a>
         </div>
         {% endif %}
+        
+        <h3>Anhänge</h3>
+        <div class="upload-section">
+            <input type="file" id="fileInput" name="file">
+            <label for="fileInput">Anhang hochladen</label>
+        </div>
+        {% if attachment_list|default([])!=[] %}
+            <ul class="attachment-list">
+                {% for attachment in attachment_list %}
+                    <li class="attachment-item">
+                        <a href="/attachment/{{ attachment.aid }}" class="download-link">{{ attachment.name }}</a> {{ attachment.uploaded }}<br>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+        <p>Zu diesem Dokument wurden keine Anhänge hochgeladen.</p>
+        {% endif %}
 
         {% if html_settings["show_info"]|default(False) == True %}
         {% if count > 0 %}
@@ -259,23 +276,6 @@
                 </p>
             </div>
         {% endif %}
-        {% endif %}
-        
-        <h3>Anhänge</h3>
-        <div class="upload-section">
-            <input type="file" id="fileInput" name="file">
-            <label for="fileInput">Anhang hochladen</label>
-        </div>
-        {% if attachment_list|default([])!=[] %}
-            <ul class="attachment-list">
-                {% for attachment in attachment_list %}
-                    <li class="attachment-item">
-                        <a href="/attachment/{{ attachment.aid }}" class="download-link">{{ attachment.name }}</a> {{ attachment.uploaded }}<br>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-        <p>Zu diesem Dokument wurden keine Anhänge hochgeladen.</p>
         {% endif %}
 
     </main>
