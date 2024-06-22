@@ -499,6 +499,9 @@ def handle_redirect(token):
     - Error if redirect not found.
     """
     try:
+        if env_vars.enable_redirect == False:
+            return redirect(url_for('render_index', token=token))
+        
         document = db.get_document_from_token(token)
         if document:
             redirect_url = db.get_redirect(token)
