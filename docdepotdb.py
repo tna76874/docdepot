@@ -192,6 +192,8 @@ class DatabaseManager:
                 token_obj = session.query(Token).filter(Token.token == token).first()
                 if token_obj:
                     did = token_obj.document.did
+                    if not self._allow_attachment_upload(did=did):
+                        return None
                     attachment = Attachment(did=did, name=kwargs.get('name'))
                     session.add(attachment)
                     session.commit()
@@ -200,6 +202,11 @@ class DatabaseManager:
                     return None
             else:
                 return None
+
+    def _allow_attachment_upload(self, did, n = 20):
+        with self.get_session() as session:
+            count = session.query(func.count(Attachment.aid)).filter(Attachment.did == did).scalar()
+            return count <= n
         
     def _check_if_redirect_is_valid(self, redirect):
         try:
