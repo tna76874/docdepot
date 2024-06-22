@@ -327,7 +327,6 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.status === 'success') {
-                                alert('Attachment uploaded successfully!');
                                 location.reload();
                             } else {
                                 alert('Error: ' + data.error);
@@ -335,7 +334,7 @@
                         })
                         .catch(error => {
                             console.error('Error:', error);
-                            alert('An error occurred while uploading the attachment.');
+                            alert('Fehler beim Hochladen!');
                         });
                     }
                 });
