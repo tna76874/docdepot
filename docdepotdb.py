@@ -848,6 +848,14 @@ class DatabaseManager:
                 # Check if the associated document has no remaining tokens
                 remaining_tokens = session.query(Token).filter_by(did=token.did).count()
                 if remaining_tokens == 0:
+                    # Delete the associated attachments
+                    attachments = session.query(Attachment).filter_by(did=token.did).all()
+                    for attachment in attachments:
+                        file_path = os.path.join(self.attachmentdir, attachment.aid)
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                        session.delete(attachment)
+                    
                     # Delete the associated file
                     doc_path = os.path.join(self.docdir, token.did)
                     if os.path.exists(doc_path):
