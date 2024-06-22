@@ -3,7 +3,7 @@
 """
 A simple database management system for storing users, documents, tokens, and events.
 """
-
+from contextlib import contextmanager
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_, MetaData, inspect, text
 from sqlalchemy.orm import relationship, sessionmaker, Session, aliased, declarative_base
 from sqlalchemy.exc import IntegrityError
@@ -81,6 +81,15 @@ class Event(Base):
     event = Column(String)
     token = relationship('Token', back_populates='events', foreign_keys=[tid])
     
+class Attachment(Base):
+    """
+    Class representing an attachment in the database.
+    """
+    __tablename__ = 'attachments'
+    aid = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    did = Column(Integer, ForeignKey('documents.did'))
+    name = Column(String)
+    uploaded = Column(DateTime, default=lambda: datetime.now(local_timezone))    
 
 class DatabaseManager:
     """
@@ -97,6 +106,18 @@ class DatabaseManager:
         self.session = Session(bind=self.engine)
         self.create_tables()
         self.docdir = docdir 
+
+    @contextmanager
+    def get_session(self):
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        try:
+            yield session
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            session.rollback()
+        finally:
+            session.close()  
 
     def __del__(self):
         """
@@ -163,6 +184,22 @@ class DatabaseManager:
                             for event in events_with_nan:
                                 event.event = 'download'
                             self.session.commit()
+
+    def add_attachment(self, **kwargs):
+        with self.get_session() as session:
+            token = kwargs.get('token')
+            if token:
+                token_obj = session.query(Token).filter(Token.token == token).first()
+                if token_obj:
+                    did = token_obj.document.did
+                    attachment = Attachment(did=did, name=kwargs.get('name'))
+                    session.add(attachment)
+                    session.commit()
+                    return attachment.aid
+                else:
+                    return None
+            else:
+                return None
         
     def _check_if_redirect_is_valid(self, redirect):
         try:

@@ -18,7 +18,8 @@ from helper import *
 # Define directories and create them if they don't exist
 datadir = 'data'
 documentdir = f'{datadir}/documents'
-_ = [os.makedirs(path) for path in [datadir, documentdir] if not os.path.exists(path)]
+attachmentdir = f'{datadir}/attachments'
+_ = [os.makedirs(path) for path in [datadir, documentdir, attachmentdir] if not os.path.exists(path)]
 
 # ENV VARS
 env_vars = EnvironmentConfigProvider()
@@ -47,6 +48,60 @@ if env_vars.cleanup_db_on_start:
 # Initialize Flask app and API
 app = Flask(__name__)
 api = Api(app)
+
+class AttachmentResource(Resource):
+    def post(self):
+        """
+        Endpoint for adding an attachment to a document.
+
+        Parameters:
+        - token: Token for accessing the document.
+        - name: Filename of the attachment.
+
+        Returns:
+        - aid: Attachment ID.
+        """
+        try:
+            data = request.form
+            file = request.files.get('file')
+
+            if not file:
+                return {"error": "file is required"}, 400
+
+            # check if file is uploaded
+            if not file.filename:
+                return {"error": "file is required"}, 400
+
+            dbdata = {
+                'token': data.get('token'),
+                'name': file.filename,
+            }
+
+            # Add attachment to the database
+            aid = db.add_attachment(**dbdata)
+
+            if aid:
+                # Save the attachment file to the ./attachments/ directory
+                attachment_path = f'./{attachmentdir}/{aid}'
+                file.save(attachment_path)
+                response = {
+                    "aid": aid,
+                    "status": "success"
+                }
+                return response, 201
+            else:
+                response = {
+                    "error": "Token not found",
+                    "status": "error"
+                }
+                return response, 500
+            
+        except Exception as e:
+            response = {
+                "error": str(e),
+                "status": "error"
+            }
+            return response, 500
 
 class DocumentResource(Resource):
     def post(self):
@@ -469,6 +524,7 @@ class AddRedirectsResource(Resource):
             return {"error": str(e)}, 500
 
 # Add routes to the API
+api.add_resource(AttachmentResource, '/api/add_attachment')
 api.add_resource(DocumentResource, '/api/add_document')
 api.add_resource(GenerateTokenResource, '/api/generate_token')
 api.add_resource(DeleteTokenResource, '/api/delete_token')

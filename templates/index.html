@@ -172,7 +172,7 @@
             {{ document['title'] }}
         </a>
 
-        {% if redirect is not none %}
+        {% if redirect is not none and html_settings["enable_redirect"]|default(True) == True %}
         <div class="redirect-button-container">
             <a href="r/{{ token }}" target="_blank" id="redirectButton">
                 {{ redirect['description'] if redirect['description'] is not none else 'Weiterleitung' }}
