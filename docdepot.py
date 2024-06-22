@@ -44,6 +44,7 @@ else:
 db = DatabaseManager(data=f'{datadir}/data.db', docdir = documentdir)
 if env_vars.cleanup_db_on_start:
     db.delete_expired_items()
+    db.delete_orphan_attachments()
 
 # Initialize Flask app and API
 app = Flask(__name__)

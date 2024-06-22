@@ -95,7 +95,7 @@ class DatabaseManager:
     """
     Class for managing the database operations.
     """
-    def __init__(self, data='data/data.db', docdir = 'data/documents'):
+    def __init__(self, data='data/data.db', docdir = 'data/documents', attachmentdir = 'data/attachments'):
         """
         Initialize the DatabaseManager with a given data file.
 
@@ -105,7 +105,8 @@ class DatabaseManager:
         self.engine = create_engine(db_url, echo=False)
         self.session = Session(bind=self.engine)
         self.create_tables()
-        self.docdir = docdir 
+        self.docdir = docdir
+        self.attachmentdir = attachmentdir
 
     @contextmanager
     def get_session(self):
@@ -254,6 +255,29 @@ class DatabaseManager:
                     return None
             else:
                 return None
+            
+    def delete_orphan_attachments(self):
+        with self.get_session() as session:
+            attachments = session.query(Attachment).all()
+            for attachment in attachments:
+                file_path = os.path.join(self.attachmentdir, attachment.aid)
+                if not os.path.exists(file_path):
+                    session.delete(attachment)
+                    print(f"Deleted orphan attachment with aid: {attachment.aid}")
+            session.commit()
+
+    def _delete_attachment_aid(self, aid):
+        with self.get_session() as session:
+            file_path = os.path.join(self.attachmentdir, aid)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"Deleted file: {file_path}")
+                    
+            attachment = session.query(Attachment).filter(Attachment.aid == aid).first()
+            if attachment:
+                session.delete(attachment)
+                session.commit()
+                print(f"Deleted attachment with aid: {aid}")
 
     def _allow_attachment_upload(self, did, n = 20):
         with self.get_session() as session:
