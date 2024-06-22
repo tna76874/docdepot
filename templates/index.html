@@ -13,40 +13,41 @@
             margin: 0;
             padding: 0;
             text-align: center;
+            color: #333;
         }
-
+    
         h1 {
             color: #fff;
             background-color: #333;
             padding: 10px;
+            margin: 0;
         }
-
+    
         a:not(.footer-link) {
             display: inline-block;
             padding: 10px 20px;
-            margin: 20px 0;
+            margin: 10px;
             text-decoration: none;
             color: #fff;
             background-color: #3498db;
             border-radius: 5px;
             transition: background-color 0.3s ease;
         }
-
+    
         a:not(.footer-link):hover {
             background-color: #2079b0;
         }
-
+    
         header {
             background-color: #333;
             color: white;
             padding: 10px;
-            text-align: center;
         }
-
+    
         main {
             padding: 20px;
         }
-
+    
         footer {
             background-color: #ccc;
             padding: 10px;
@@ -57,99 +58,102 @@
             align-items: center;
             justify-content: space-between;
         }
-
+    
         .footer-github {
             display: flex;
             align-items: center;
         }
-
+    
         .footer-link {
-            color: #000000;
+            color: #000;
             text-decoration: none;
             display: flex;
             align-items: center;
             margin-right: auto;
         }
-
+    
         .footer-link i {
             font-size: 24px;
-            margin-right: auto;
+            margin-right: 5px;
         }
-
+    
         .footer-link a {
-            display: inline-block;
-            padding: 10px;
-            margin: 0;
+            padding: 8px 15px;
             text-decoration: none;
             color: #fff;
             background-color: #06be16;
             border-radius: 5px;
+            transition: background-color 0.3s ease;
         }
-
+    
+        .footer-link a:hover {
+            background-color: #04a612;
+        }
+    
         .footer-info {
             text-align: right;
             margin-right: 20px;
         }
-
+    
         footer p {
             margin: 0;
             text-align: right;
+            color: #333;
         }
-
+    
         .status-section {
             padding: 4vw;
             text-align: center;
             margin: 4vw 0;
             border-radius: 2vw;
-            font-size: clamp(14px, 4vw, 24px);;
+            font-size: clamp(14px, 4vw, 24px);
+            color: #fff;
         }
-
+    
         .status-section.abgerufen {
-            background-color: green;
-            color: #fff;
+            background-color: #28a745;
         }
-
+    
         .status-section.nicht-abgerufen {
-            background-color: #e74c3c;
-            color: #fff;
+            background-color: #dc3545;
         }
-
+    
         .status-section p {
             margin: 4vw 0;
             font-size: clamp(12px, 3.5vw, 18px);
         }
-
+    
         #downloadButton.disabled {
             opacity: 0.5;
             pointer-events: none;
         }
-
+    
         #redirectButton {
             display: inline-block;
             padding: 10px 20px;
-            margin: 20px 0;
+            margin: 10px;
             text-decoration: none;
-            color: #000;
-            background-color: #ccc;
+            color: #fff;
+            background-color: #007bff;
             border-radius: 5px;
             transition: background-color 0.3s ease;
         }
-
+    
         #redirectButton:hover {
-            background-color: #999;
+            background-color: #0056b3;
         }
-
+    
         .redirect-button-container {
             display: block;
             width: 100%;
             margin-top: 10px;
         }
-
+    
         .attachment-list {
             list-style-type: none;
             padding: 0;
         }
-
+    
         .attachment-item {
             margin-bottom: 15px;
             padding: 10px;
@@ -157,43 +161,61 @@
             border-radius: 5px;
             background-color: #f9f9f9;
         }
-
+    
         .attachment-item a {
-            color: #bddbfc;
+            color: #ffffff;
             text-decoration: none;
         }
-
+    
         .attachment-item a:hover {
             text-decoration: underline;
         }
-
+    
         .attachment-item strong {
             display: block;
             margin-bottom: 5px;
+            color: #333;
         }
+
+        .attachment-item .download-link::after {
+            content: '\f019';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            font-size: 16px;
+            margin-left: 5px;
+            color: #ffffff;
+        }
+    
         h3 {
             font-size: 1.2em;
             margin-bottom: 10px;
             color: #333;
         }
-
+    
         .upload-section {
             margin-bottom: 20px;
         }
-
+    
         .upload-section input[type="file"] {
             display: none;
         }
-
+    
         .upload-section label {
             display: inline-block;
             padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
+            background-color: #ffd27e;
+            color: rgb(0, 0, 0);
             cursor: pointer;
             border-radius: 5px;
         }
-    </style>
+        .upload-section label::after {
+        content: '\f093';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        font-size: 16px;
+        margin-left: 10px;
+        }
+    </style>    
 </head>
 <body>
     <header>
@@ -248,7 +270,7 @@
             <ul class="attachment-list">
                 {% for attachment in attachment_list %}
                     <li class="attachment-item">
-                        <a href="/attachment/{{ attachment.aid }}">{{ attachment.name }}</a> {{ attachment.uploaded }}<br>
+                        <a href="/attachment/{{ attachment.aid }}" class="download-link">{{ attachment.name }}</a> {{ attachment.uploaded }}<br>
                     </li>
                 {% endfor %}
             </ul>
@@ -301,6 +323,11 @@
 
 
     <script>
+        function adjustFooterSpace() {
+            const footerHeight = document.querySelector('footer').offsetHeight;
+            document.body.style.paddingBottom = footerHeight + 10 + 'px';
+        }
+
         function disableButton() {
             var downloadButton = document.getElementById("downloadButton");
             downloadButton.classList.add("disabled");
@@ -310,6 +337,8 @@
             }, 10000);
         }
         document.addEventListener('DOMContentLoaded', function() {
+            adjustFooterSpace()
+
             var fileInput = document.getElementById('fileInput');
             
             if (fileInput) {
