@@ -36,7 +36,7 @@ jobs:
       - name: Build the Docker image
         run: ./build.sh Dockerfile
 
-      - name: Dummy Job
-        runs-on: ubuntu-latest
-        steps:
-          - run: echo "This is a dummy job to satisfy GitHub Actions requirement"
+  dummy-job:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This is a dummy job to satisfy GitHub Actions requirement"
