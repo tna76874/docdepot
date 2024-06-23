@@ -95,7 +95,7 @@ class AttachmentResource(Resource):
                 return {"error": "Die Datei ist bereits schon auf dem Server vorhanden."}, 400
 
             # checking if image is blurred
-            if DetectBlur().detect_blur(file).get('status', False):
+            if DetectBlur(threshold=env_vars.blur_threshold).detect_blur(file).get('status', False):
                 return {"error": "Das Bild ist unscharf."}, 400
 
             # AI check on image quality

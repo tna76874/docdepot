@@ -70,6 +70,8 @@ class EnvironmentConfigProvider:
         
         self.classify_model = self._read_var('DOCDEPOT_MODEL')
         self.classify_model_threshold = float(self._read_var('DOCDEPOT_MODEL_THRESHOLD') or 0.55)
+
+        self.blur_threshold = float(self._read_var('DOCDEPOT_BLUR_THRESHOLD') or 40)
         
     def _read_var(self, var_name):
         value = os.environ.get(var_name)
