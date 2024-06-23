@@ -859,6 +859,39 @@ class DatabaseManager:
         finally:
             session.close()
             
+    def set_all_attachment_deadlines(self, new_allow_until):
+        """
+        Set the allow_until for all tokens in the database to a specified datetime.
+
+        Parameters:
+        - new_allow_until: datetime object representing the new allow_until datetime.
+        """
+        new_allow_until = self._ensure_datetime(new_allow_until) 
+        
+        with self.get_session() as session:
+            tokens = session.query(Token).all()
+
+            for token in tokens:
+                token.allow_until = new_allow_until
+
+            session.commit()
+            
+    def update_token_attachment_deadline(self, data):
+        if not isinstance(data, list):
+            data = [data]
+    
+        with self.get_session() as session:
+            for update_data in data:
+                token_value = update_data.get('token')
+                new_allow_until = self._ensure_datetime(update_data.get('expires'))          
+    
+                token = session.query(Token).filter_by(token=token).first()
+    
+                if token:
+                    token.allow_until = new_allow_until
+    
+                session.commit()
+            
     def update_token_valid_until(self, token_value, new_valid_until):
         """
         Update the 'valid_until' date of a token.
