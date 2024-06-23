@@ -504,6 +504,32 @@ class SetAllUsersExpiryDateResource(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
         
+class SetAllAttachmentsExpiryDateResource(Resource):
+    def put(self):
+        """
+        Endpoint for setting the 'allow_until' date for all tokens.
+
+        Request Body:
+        {
+            "expires": "isoformat"
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            valid_until = data.get('expires')
+            if not valid_until:
+                return {"error": "missing expiry date"}, 500
+
+            db.set_all_attachment_deadlines(valid_until)
+
+            return {"message": f"successfully set deadlines."}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+        
 class CheckTokenValidityResource(Resource):
     def post(self):
         """
@@ -594,6 +620,7 @@ api.add_resource(GetUsersResource, '/api/get_users')
 api.add_resource(GetAttachmentListResource, '/api/get_attachments')
 api.add_resource(UpdateUserExpiryDateResource, '/api/update_user_expiry_date')
 api.add_resource(SetAllUsersExpiryDateResource, '/api/set_all_users_expiry_date')
+api.add_resource(SetAllAttachmentsExpiryDateResource, '/api/set_all_attachments_expiry_dates')
 api.add_resource(CheckTokenValidityResource, '/api/check_token_validity')
 api.add_resource(AddRedirectsResource, '/api/add_redirects')
 

@@ -436,6 +436,36 @@ class DocDepotManager:
                 return f"Error: {response.status_code}, {error_message}"
             except ValueError:
                 return f"Error: {response.status_code}, Response content: {response.text}"
+            
+
+    def set_all_attachments_expiry_date(self, valid_until):
+        """
+        Set the 'valid_until' date for all attachments.
+
+        Parameters:
+        - valid_until: New 'valid_until' date for all attachments.
+
+        Returns:
+        - message: A success or error message.
+        """
+        if isinstance(valid_until, str):
+            valid_until =  datetime.strptime(valid_until, '%Y-%m-%d').isoformat()
+        elif isinstance(valid_until, datetime):
+            valid_until = valid_until.isoformat()
+            
+        url = urljoin(self.api_url+'/', 'set_all_attachments_expiry_dates')
+        data = {'expires': valid_until}
+        response = requests.put(url, headers=self.headers, json=data)
+
+        if response.status_code == 200:
+            self.success = True
+            return {"message": f"All attachments' expiry date set to {valid_until} successfully."}
+        else:
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
 
     def add_redirects(self, redirect_list):
         """
