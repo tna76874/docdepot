@@ -12,6 +12,8 @@ from PIL import Image
 from io import BytesIO
 import cv2
 
+tf.config.set_visible_devices([], 'GPU')
+
 class DetectBlur:
     def __init__(self, threshold=40):
         self.threshold = threshold

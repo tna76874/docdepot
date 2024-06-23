@@ -1,8 +1,8 @@
-version: '3'
 services:
   docdepot:
   # TAGS: 'latest', 'stable' or dedicated git commit hash 
     image: ghcr.io/tna76874/docdepot:latest
+    build: .
     ports:
       - "5000:5000"
     container_name: docdepot-container
@@ -11,5 +11,6 @@ services:
       - DOCDEPOT_SHOW_INFO=False
       - DOCDEPOT_SHOW_RESPONSE_TIME=False
       - DOCDEPOT_SHOW_TIMESTAMP=False
+      - DOCDEPOT_MODEL=data/model.keras
     volumes:
       - ./data:/app/data

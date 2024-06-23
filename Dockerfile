@@ -3,7 +3,7 @@ FROM python:3.9
 WORKDIR /app
 
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y git libgl1
 
 COPY .git /app/.git
 RUN git --git-dir=/app/.git rev-parse HEAD > COMMIT_HASH && \
