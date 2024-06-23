@@ -1,9 +1,4 @@
-FROM python:3.9
-
-WORKDIR /app
-
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get install -y git libgl1
+FROM ghcr.io/tna76874/docdepotbase:latest
 
 COPY .git /app/.git
 RUN git --git-dir=/app/.git rev-parse HEAD > COMMIT_HASH && \
@@ -15,10 +10,9 @@ COPY classify.py /app/classify.py
 COPY docdepotdb.py /app/docdepotdb.py
 COPY templates /app/templates
 COPY ddclient /app/ddclient
-COPY requirements.txt /app/requirements.txt
+RUN chmod -R +x /app
 
 ENV DEPOSER_API_KEY='test'
-RUN pip install pipreqs && pip install -r requirements.txt && chmod -R +x /app
 
 EXPOSE 5000
 

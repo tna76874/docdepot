@@ -2,7 +2,6 @@ services:
   docdepot:
   # TAGS: 'latest', 'stable' or dedicated git commit hash 
     image: ghcr.io/tna76874/docdepot:latest
-    build: .
     ports:
       - "5000:5000"
     container_name: docdepot-container
