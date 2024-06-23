@@ -18,9 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'pull_request' || (
-        github.event_name == 'push' &&
-        contains(github.event.head_commit.modified, 'Dockerfile_base') &&
-        contains(github.event.head_commit.modified, '.github/workflows/docker-image.yml') &&
+        github.event_name == 'push' ||
+        contains(github.event.head_commit.modified, 'Dockerfile_base') ||
+        contains(github.event.head_commit.modified, '.github/workflows/docker-image.yml') ||
         contains(github.event.head_commit.modified, 'requirements.txt')
       )
     steps:
