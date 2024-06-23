@@ -94,7 +94,11 @@ class AttachmentResource(Resource):
             if db.check_if_checksum_exists(checksum):
                 return {"error": "Die Datei ist bereits schon auf dem Server vorhanden."}, 400
 
-            # classify image
+            # checking if image is blurred
+            if DetectBlur().detect_blur(file).get('status', False):
+                return {"error": "Das Bild ist unscharf."}, 400
+
+            # AI check on image quality
             if classify:
                 classify_result = classify.classify_image(file)
                 if classify_result:
