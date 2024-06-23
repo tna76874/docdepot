@@ -69,6 +69,7 @@ class Token(Base):
     did = Column(String, ForeignKey('documents.did'))
     token = Column(String, unique=True, default=lambda: str(uuid.uuid4()))
     valid_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=365))
+    allow_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=7))
     create = Column(DateTime, default=lambda: datetime.now(local_timezone))
     document = relationship('Document', back_populates='tokens')
     events = relationship('Event', back_populates='token', cascade='all, delete-orphan', foreign_keys='[Event.tid]')
@@ -191,6 +192,56 @@ class DatabaseManager:
                             for event in events_with_nan:
                                 event.event = 'download'
                             self.session.commit()
+
+    def _get_deadline_for_attachment(self, token_value):
+        """
+        Retrieves the allow_until datetime for a token with the given token_id.
+
+        :param token_id: The ID of the token to retrieve the deadline for.
+        :return: The allow_until datetime if found and not None, otherwise None.
+        """
+        with self.get_session() as session:
+            # Find the token in the database
+            token = session.query(Token).filter_by(token=token_value).first()
+
+            if token and token.allow_until is not None:
+                return token.allow_until.replace(hour=23, minute=59, second=0, microsecond=0)
+            else:
+                return None
+                            
+    def _allow_attachment_for_token(self, token_value):
+        """
+        Checks if the current time is before the allow_until time for a token with the given token_id.
+
+        :param token_id: The ID of the token to check.
+        :return: True if current time is before allow_until, False otherwise.
+        """
+        try:
+            current_time = datetime.now(local_timezone).replace(tzinfo=None)
+    
+            token_deadline = self._get_deadline_for_attachment(token_value)
+    
+            if token_deadline:
+                return current_time < token_deadline
+            else:
+                return False
+        except:
+            return False
+                            
+    def _ensure_attachment_deadlines(self):
+        """
+        Sets the allow_until for tokens with None allow_until exactly one week after the create date.
+        """
+        with self.get_session() as session:
+            # Fetch tokens with None allow_until
+            tokens = session.query(Token).filter(Token.allow_until == None).all()
+
+            # Update allow_until for each token
+            for token in tokens:
+                token.allow_until = token.create + timedelta(days=7)
+            
+            # Commit changes to the database
+            session.commit()
                             
     def check_if_checksum_exists(self, checksum):
         with self.get_session() as session:

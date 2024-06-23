@@ -53,6 +53,7 @@ if env_vars.cleanup_db_on_start:
     db.delete_orphans()
     db._calculate_missing_checksums()
     db._delete_duplicates_from_attachments()
+    db._ensure_attachment_deadlines()
 
 # Initialize Flask app and API
 app = Flask(__name__)
@@ -73,6 +74,10 @@ class AttachmentResource(Resource):
         try:
             data = request.form
             file = request.files.get('file')
+            
+            if not db._allow_attachment_for_token(data.get('token')):
+                return {"error": "Abgabefrist abgelaufen"}, 400
+                
 
             if not file:
                 return {"error": "file is required"}, 400
@@ -700,6 +705,12 @@ def render_index(token):
             
             if first_viewed!=None:
                 first_viewed = first_viewed.strftime('%d.%m.%Y %H:%M:%S')
+                
+            attachment_info = {
+                'is_allowed': db._allow_attachment_for_token(token),
+                'allow_until': db._get_deadline_for_attachment(token).strftime('%d.%m.%Y %H:%M Uhr') if db._get_deadline_for_attachment(token) else None,
+            }
+            
             return render_template(
                 'index.html',
                 token=token,
@@ -711,6 +722,7 @@ def render_index(token):
                 html_settings = html_settings,
                 redirect = redirect_url,
                 attachment_list=attachment_list,
+                attachment_info=attachment_info,
             )
         else:
             return render_template('index.html', document_found=False, html_settings=html_settings)

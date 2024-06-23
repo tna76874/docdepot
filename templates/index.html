@@ -242,10 +242,15 @@
         {% endif %}
         
         <h3>Verbesserungen</h3>
+        {% if attachment_info['is_allowed']|default(False) == True %}
+        <p style="font-style: italic; font-size: smaller;">
+            Abgabe möglich bis {{ attachment_info['allow_until']|default('--') }}
+        </p>
         <div class="upload-section">
             <input type="file" id="fileInput" name="file">
             <label for="fileInput">Verbesserung hochladen</label>
         </div>
+        {% endif %}
         {% if attachment_list|default([])!=[] %}
             <ul class="attachment-list">
                 {% for attachment in attachment_list %}
@@ -256,6 +261,9 @@
             </ul>
         {% else %}
         <p>Zu diesem Dokument wurden keine Verbesserungen hochgeladen.</p>
+        {% if attachment_info['is_allowed']|default(False) == False %}
+        <p>Die Abgabe war bis {{ attachment_info['allow_until']|default('--') }} möglich.</p>
+        {% endif %}
         {% endif %}
 
         {% if html_settings["show_info"]|default(False) == True %}
