@@ -11,6 +11,7 @@ RUN git --git-dir=/app/.git rev-parse HEAD > COMMIT_HASH && \
 
 COPY docdepot.py /app/docdepot.py
 COPY helper.py /app/helper.py
+COPY classify.py /app/classify.py
 COPY docdepotdb.py /app/docdepotdb.py
 COPY templates /app/templates
 COPY ddclient /app/ddclient

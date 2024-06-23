@@ -33,6 +33,9 @@ html_settings = env_vars._get_html_configs()
 # init gotify, if set
 gotify = env_vars._get_gotify()
 
+# init classifier
+classify = env_vars._get_classify()
+
 # read version as commit hash
 commit_hash_file='COMMIT_HASH'
 if os.path.exists(commit_hash_file):
@@ -84,12 +87,19 @@ class AttachmentResource(Resource):
                 return {"error": "Die Datei muss kleiner als 15MB sein!"}, 400
             file.seek(0)
             
-            
             # calc checksum
             checksum = ChecksumCalculator().calc_from_object(file)
-            
+
+            # do not allow duplicates on upload            
             if db.check_if_checksum_exists(checksum):
                 return {"error": "Die Datei ist bereits schon auf dem Server vorhanden."}, 400
+
+            # classify image
+            if classify:
+                classify_result = classify.classify_image(file)
+                if classify_result:
+                    if not classify_result.get('status', False):
+                        return {"error": "Ungenügende Bildqualität. Bitte auf einen deutlichen und gut ausgeleuchteten Scan/Foto achten."}, 400
 
             dbdata = {
                 'token': data.get('token'),

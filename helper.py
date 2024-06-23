@@ -6,6 +6,7 @@ helper modules
 import os
 import requests
 import hashlib
+from classify import *
 
 class ChecksumCalculator:
     def __init__(self):
@@ -67,6 +68,9 @@ class EnvironmentConfigProvider:
         self.gotify_host = self._read_var('GOTIFY_HOST')
         self.gotify_token = self._read_var('GOTIFY_TOKEN')
         
+        self.classify_model = self._read_var('DOCDEPOT_MODEL')
+        self.classify_model_threshold = float(self._read_var('DOCDEPOT_MODEL_THRESHOLD') or 0.55)
+        
     def _read_var(self, var_name):
         value = os.environ.get(var_name)
         return value if value != "" else None
@@ -78,6 +82,19 @@ class EnvironmentConfigProvider:
         if self.gotify_host is not None and self.gotify_token is not None:
             return PushNotify(self.gotify_host, self.gotify_token, title = 'DocDepot')
         return None
+    
+    def _get_classify(self):
+        if not self.classify_model:
+            return None
+        
+        if os.path.exists(self.classify_model):
+            try:
+                classifier = ImageClassifier(model_path=self.classify_model, threshold = self.classify_model_threshold)
+                return classifier
+            except:
+                return None
+        else:
+            return None
 
     def _get_html_configs(self):
         html_configs = {
