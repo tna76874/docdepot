@@ -14,31 +14,31 @@ on:
 
 
 jobs:
-  build-base:
-    runs-on: ubuntu-latest
-    if: |
-      ( github.event_name == 'pull_request' || github.event_name == 'push' ) && 
-      (
-        contains(github.event.head_commit.modified, 'Dockerfile_base') ||
-        contains(github.event.head_commit.modified, '.github/workflows/docker-image.yml') ||
-        contains(github.event.head_commit.modified, 'requirements.txt')
-      )
-    steps:
-      - uses: actions/checkout@v4
+  # build-base:
+  #   runs-on: ubuntu-latest
+  #   if: |
+  #     ( github.event_name == 'pull_request' || github.event_name == 'push' ) && 
+  #     (
+  #       contains(github.event.head_commit.modified, 'Dockerfile_base') ||
+  #       contains(github.event.head_commit.modified, '.github/workflows/docker-image.yml') ||
+  #       contains(github.event.head_commit.modified, 'requirements.txt')
+  #     )
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: 'Login to GitHub Container Registry'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: 'Login to GitHub Container Registry'
+  #       uses: docker/login-action@v3
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build the Docker image
-        run: ./build.sh Dockerfile_base base
+  #     - name: Build the Docker image
+  #       run: ./build.sh Dockerfile_base base
 
   build-image:
     runs-on: ubuntu-latest
-    needs: build-base
+    # needs: build-base
     steps:
       - uses: actions/checkout@v4
 
