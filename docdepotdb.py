@@ -325,6 +325,24 @@ class DatabaseManager:
             else:
                 return None
             
+    def delete_orphans(self):
+        self.delete_orphan_attachments()
+        self.delete_orphan_attachments_files()
+            
+    def delete_orphan_attachments_files(self):
+        with self.get_session() as session:
+            aids_in_db = set([attachment.aid for attachment in session.query(Attachment).all()])
+            
+        for filename in os.listdir(self.attachmentdir):
+            file_path = os.path.join(self.attachmentdir, filename)
+            
+            if filename not in aids_in_db:
+                try:
+                    os.remove(file_path)
+                    print(f"Deleted orphan file: {file_path}")
+                except OSError as e:
+                    print(f"Error deleting file {file_path}: {e}")
+            
     def delete_orphan_attachments(self):
         with self.get_session() as session:
             attachments = session.query(Attachment).all()
@@ -1246,24 +1264,3 @@ class DatabaseManager:
 
 if __name__ == '__main__':
     self = DatabaseManager()
-    
-    # Uncomment and use the following lines to test the methods individually:
-    # db_manager.add_user("example_uid")
-    # document_data = {
-    #     'title': 'Example Document',
-    #     'filename': 'test.pdf',
-    #     'user_uid': 'example_uid',
-    # }
-    # did = db_manager.add_document(document_data)
-    #
-    # token_data = {
-    #     'did': 'example_did',
-    #     'token': 'example_token'
-    # }
-    # token = db_manager.add_token(did)
-    #
-    # db_manager.add_event(token)
-    #
-    # db_manager.get_download_event_count(token)
-    
-    self.close_session()

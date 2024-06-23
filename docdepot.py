@@ -50,7 +50,7 @@ else:
 db = DatabaseManager(data=f'{datadir}/data.db', docdir = documentdir)
 if env_vars.cleanup_db_on_start:
     db.delete_expired_items()
-    db.delete_orphan_attachments()
+    db.delete_orphans()
     db._calculate_missing_checksums()
     db._delete_duplicates_from_attachments()
 
