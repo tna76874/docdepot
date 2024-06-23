@@ -5,12 +5,14 @@ A simple database management system for storing users, documents, tokens, and ev
 """
 from contextlib import contextmanager
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_, MetaData, inspect, text, desc
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, sessionmaker, Session, aliased, declarative_base, joinedload
 from sqlalchemy.exc import IntegrityError
 import uuid
 import pytz
 from datetime import datetime, timedelta, timezone
 import os
+from helper import *
 
 ## timezone settings
 def get_german_timezone():
@@ -52,6 +54,7 @@ class Document(Base):
     valid_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=365))
     title = Column(String)
     filename = Column(String)
+    checksum = Column(String)
     upload_datetime = Column(DateTime, default=lambda: datetime.now(local_timezone))
     user_uid = Column(String, ForeignKey('users.uid'))
     user = relationship('User', back_populates='documents')
@@ -89,6 +92,7 @@ class Attachment(Base):
     aid = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     did = Column(Integer, ForeignKey('documents.did'))
     name = Column(String)
+    checksum = Column(String)
     uploaded = Column(DateTime, default=lambda: datetime.now(local_timezone))    
 
 class DatabaseManager:
@@ -173,7 +177,9 @@ class DatabaseManager:
                             unique=column.unique
                         )
                         with self.engine.connect() as con:
-                            add_query = f"ALTER TABLE {table_name} ADD COLUMN {new_column.compile(dialect=self.engine.dialect)}"
+                            column_info = f"{new_column.name} {new_column.type.compile(self.engine.dialect)}"
+                            add_query = f"ALTER TABLE {table_name} ADD COLUMN {column_info}"
+                            # print(add_query)
                             con.execute(text(add_query))
     
                         # Print a message indicating that the column has been created
@@ -185,6 +191,69 @@ class DatabaseManager:
                             for event in events_with_nan:
                                 event.event = 'download'
                             self.session.commit()
+                            
+    def check_if_checksum_exists(self, checksum):
+        with self.get_session() as session:
+            existing_attachment_checksum = session.query(Attachment).filter_by(checksum=checksum).first()
+            existing_document_checksum = session.query(Document).filter_by(checksum=checksum).first()
+
+            return existing_attachment_checksum is not None or existing_document_checksum is not None
+                            
+    def _delete_duplicates_from_attachments(self):
+        with self.get_session() as session:
+            subq = (
+                session.query(func.min(Attachment.uploaded).label('min_uploaded'))
+                .group_by(Attachment.checksum)
+                .having(func.count(Attachment.checksum) > 1)
+                .subquery()
+            )
+
+            oldest_to_keep = (
+                session.query(Attachment.checksum, func.min(Attachment.uploaded).label('min_uploaded'))
+                .group_by(Attachment.checksum)
+                .having(func.count(Attachment.checksum) > 1)
+            )
+
+            for checksum, min_uploaded in oldest_to_keep:
+                duplicates_to_delete = (
+                    session.query(Attachment)
+                    .filter(Attachment.checksum == checksum, Attachment.uploaded != min_uploaded)
+                    .all()
+                )
+
+                for duplicate in duplicates_to_delete:
+                    session.delete(duplicate)
+
+            session.commit()
+            
+    def _calculate_missing_checksums(self):
+        self._calculate_missing_checksum_of_attachments()
+        self._calculate_missing_checksum_of_documents()
+        
+                            
+    def _calculate_missing_checksum_of_attachments(self):
+        with self.get_session() as session:
+            attachments = session.query(Attachment).filter(Attachment.checksum == None).all()
+
+            for attachment in attachments:
+                file_path = os.path.join(self.attachmentdir, attachment.aid)
+                checksum = ChecksumCalculator().calc_from_file(file_path)
+
+                attachment.checksum = checksum
+
+            session.commit()
+            
+    def _calculate_missing_checksum_of_documents(self):
+        with self.get_session() as session:
+            documents = session.query(Document).filter(Document.checksum == None).all()
+
+            for document in documents:
+                file_path = os.path.join(self.docdir, document.did)
+                checksum = ChecksumCalculator().calc_from_file(file_path)
+
+                document.checksum = checksum
+
+            session.commit()
                             
     def get_all_attachments(self):
         with self.get_session() as session:
@@ -247,7 +316,7 @@ class DatabaseManager:
                     did = token_obj.document.did
                     if not self._allow_attachment_upload(did=did):
                         return None
-                    attachment = Attachment(did=did, name=kwargs.get('name'))
+                    attachment = Attachment(did=did, name=kwargs.get('name'), checksum=kwargs.get('checksum'))
                     session.add(attachment)
                     session.commit()
                     return attachment.aid

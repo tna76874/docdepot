@@ -48,6 +48,8 @@ db = DatabaseManager(data=f'{datadir}/data.db', docdir = documentdir)
 if env_vars.cleanup_db_on_start:
     db.delete_expired_items()
     db.delete_orphan_attachments()
+    db._calculate_missing_checksums()
+    db._delete_duplicates_from_attachments()
 
 # Initialize Flask app and API
 app = Flask(__name__)
@@ -81,10 +83,18 @@ class AttachmentResource(Resource):
             if len(file.read()) > max_file_size:
                 return {"error": "Die Datei muss kleiner als 15MB sein!"}, 400
             file.seek(0)
+            
+            
+            # calc checksum
+            checksum = ChecksumCalculator().calc_from_object(file)
+            
+            if db.check_if_checksum_exists(checksum):
+                return {"error": "Die Datei ist bereits schon auf dem Server vorhanden."}, 400
 
             dbdata = {
                 'token': data.get('token'),
                 'name': file.filename,
+                'checksum': checksum,
             }
 
             # Add attachment to the database
@@ -150,6 +160,7 @@ class DocumentResource(Resource):
                 'title': data.get('title'),
                 'filename': data.get('filename'),
                 'user_uid': data.get('user_uid'),
+                'checksum' : data.get('checksum', None),
             }
 
             # Add document to the database

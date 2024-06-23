@@ -5,6 +5,34 @@ helper modules
 """
 import os
 import requests
+import hashlib
+
+class ChecksumCalculator:
+    def __init__(self):
+        self.sha256_hash = hashlib.sha256()
+
+    def update_checksum(self, data):
+        self.sha256_hash.update(data)
+
+    def calc_from_object(self, obj):
+        self.sha256_hash = hashlib.sha256()
+        self.update_checksum(obj.read())
+
+        checksum = self.sha256_hash.hexdigest()
+        self.reset_file_position(obj)
+        
+        return checksum
+
+    def calc_from_file(self, file_path):
+        with open(file_path, 'rb') as file:
+            data = file.read()
+            self.update_checksum(data)
+
+        checksum = self.sha256_hash.hexdigest()
+        return checksum
+
+    def reset_file_position(self, file_obj):
+        file_obj.seek(0)
 
 class PushNotify:
     def __init__(self, host=None, token=None, **kwargs):
@@ -29,7 +57,7 @@ class EnvironmentConfigProvider:
     def __init__(self):
         self.apikey = os.environ.get("DOCDEPOT_API_KEY", "test")
         self.default_redirect = os.environ.get("DOCDEPOT_DEFAULT_REDIRECT", None)
-        self.enable_redirect = os.environ.get("DOCDEPOT_ENABLE_REDIRECT", "True").lower() == "true"
+        self.enable_redirect = os.environ.get("DOCDEPOT_ENABLE_REDIRECT", "False").lower() == "true"
         self.show_info = os.environ.get("DOCDEPOT_SHOW_INFO", "False").lower() == "true"
         self.show_response_time = os.environ.get("DOCDEPOT_SHOW_RESPONSE_TIME", "False").lower() == "true"
         self.show_timestamp = os.environ.get("DOCDEPOT_SHOW_TIMESTAMP", "False").lower() == "true"
