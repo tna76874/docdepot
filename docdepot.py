@@ -75,6 +75,11 @@ class AttachmentResource(Resource):
             data = request.form
             file = request.files.get('file')
             
+            document = db.get_document_from_token(data.get('token'))
+            if not document:
+                return {"error": "Dokument nicht gefunden"}, 400
+            
+            
             if not db._allow_attachment_for_token(data.get('token')):
                 return {"error": "Abgabefrist abgelaufen"}, 400
                 
@@ -128,7 +133,8 @@ class AttachmentResource(Resource):
                     "status": "success"
                 }
                 if gotify:
-                    gotify.send(f'{request.scheme}://{request.host}/{dbdata["token"]}')
+                    hash_sid = ShortHash(document["user_uid"]).get()
+                    gotify.send(f'{document["title"]}\n{hash_sid}\n{request.scheme}://{request.host}/{dbdata["token"]}')
                     
                 return response, 201
             else:

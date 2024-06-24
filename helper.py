@@ -8,6 +8,15 @@ import requests
 import hashlib
 from classify import *
 
+class ShortHash:
+    def __init__(self, input_string):
+        self.input_string = input_string
+        self.short_hash = self.get()
+
+    def get(self):
+        hash_object = hashlib.md5(self.input_string.encode())
+        return hash_object.hexdigest()[:4]
+
 class ChecksumCalculator:
     def __init__(self):
         self.sha256_hash = hashlib.sha256()
