@@ -19,39 +19,42 @@ class DetectBlur:
         self.threshold = threshold
 
     def detect_blur(self, image_input):
-        # Read the image
-        img_loaded = ImageLoader().load_image(image_input)
-        if not img_loaded:
-            return None
-        
-        # Konvertiere die Binärdaten in ein numpy-Array
-        img_array = np.frombuffer(img_loaded, dtype=np.uint8)
-        
-        # Lade das Bild mit OpenCV aus dem numpy-Array
-        image = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-        
-        # Convert image to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-        # Apply binary thresholding for bright spot detection
-        _, binary_image = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
-
-        # Apply Laplacian filter for edge detection
-        laplacian = cv2.Laplacian(gray, cv2.CV_64F)
-
-        # Calculate maximum intensity and variance
-        _, max_val, _, _ = cv2.minMaxLoc(gray)
-        laplacian_variance = laplacian.var()
-
-        # Initialize result variables
-        blur_text = f"Not Blurry ({laplacian_variance})"
-
-        # Check blur condition based on variance of Laplacian image
-        is_blurred = laplacian_variance < self.threshold
-        if is_blurred:
-            blur_text = f"Blurry ({laplacian_variance})"
-
-        return {'status' : is_blurred, 'variance': laplacian_variance}
+        try:
+            # Read the image
+            img_loaded = ImageLoader().load_image(image_input)
+            if not img_loaded:
+                return None
+            
+            # Konvertiere die Binärdaten in ein numpy-Array
+            img_array = np.frombuffer(img_loaded, dtype=np.uint8)
+            
+            # Lade das Bild mit OpenCV aus dem numpy-Array
+            image = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+            
+            # Convert image to grayscale
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+            # Apply binary thresholding for bright spot detection
+            _, binary_image = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
+    
+            # Apply Laplacian filter for edge detection
+            laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+    
+            # Calculate maximum intensity and variance
+            _, max_val, _, _ = cv2.minMaxLoc(gray)
+            laplacian_variance = laplacian.var()
+    
+            # Initialize result variables
+            blur_text = f"Not Blurry ({laplacian_variance})"
+    
+            # Check blur condition based on variance of Laplacian image
+            is_blurred = laplacian_variance < self.threshold
+            if is_blurred:
+                blur_text = f"Blurry ({laplacian_variance})"
+    
+            return {'status' : is_blurred, 'variance': laplacian_variance}
+        except:
+            return {'status' : False, 'variance': None}
 
 class ImageLoader:
     def __init__(self):
