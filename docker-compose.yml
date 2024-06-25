@@ -1,4 +1,11 @@
 services:
+  docimaginary:
+    image: h2non/imaginary:1.2.4
+    container_name: docimaginary
+    restart: always
+    expose:
+      - 9000
+
   docdepot:
   # TAGS: 'latest', 'stable' or dedicated git commit hash 
     image: ghcr.io/tna76874/docdepot:latest
@@ -11,5 +18,6 @@ services:
       - DOCDEPOT_SHOW_RESPONSE_TIME=False
       - DOCDEPOT_SHOW_TIMESTAMP=False
       - DOCDEPOT_MODEL=data/model.keras
+      - IMAGINARY_HOST=http://docimaginary:9000
     volumes:
       - ./data:/app/data
