@@ -30,10 +30,12 @@ def none_on_exception(func):
     return wrapper
 
 class FileLoader:
-    def __init__(self, file_input, max_file_size = 15 * 1024 * 1024):
-        self.attributes = {}
+    def __init__(self, file_input, max_file_size = 15 * 1024 * 1024, filename = None):
+        self.attributes =   {
+                            'filename' : filename,
+                            }
         self.max_file_size = max_file_size
-        self.load_buffer(file_input)   
+        self.load_buffer(file_input)
 
     def __del__(self):
         self._close_file()
@@ -50,12 +52,9 @@ class FileLoader:
     def max_size_mb(self):
         return self.max_file_size / (1024 * 1024)
     
-    def get(self, key):
-        self.attributes.get(key)
-    
     @none_on_exception
     def _check_if_is_image(self):
-        image_mimetypes = [mimetype for mimetype in mimetypes.types_map.values() if mimetype.startswith('image')]
+        image_mimetypes = [mimetype for mimetype in mimetypes.types_map.values() if mimetype.startswith('image')] + ['image/heic']
         self.attributes.update({'is_image': self.attributes.get('mimetype') in image_mimetypes})
                                 
     @none_on_exception
@@ -65,7 +64,7 @@ class FileLoader:
         
     @none_on_exception
     def _check_if_filetype_is_accepted(self):
-        accept_file_mimetype = (self.get('is_pdf') or False) or (self.get('is_image') or False)
+        accept_file_mimetype = self.attributes.get('is_pdf', False) or self.attributes.get('is_image', False)
         self.attributes.update({'accept_mimetype': accept_file_mimetype})
 
     @none_on_exception

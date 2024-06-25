@@ -7,6 +7,55 @@ import os
 import requests
 import hashlib
 from classify import *
+import json
+
+
+class ImageAPI:
+    def __init__(self, url='http://localhost:9000', loaded = None):
+        if not loaded:
+            raise ValueError("Must be initialized with FileLoader object")
+            
+        self.base_url = url
+        self.loaded = loaded
+        self.format = 'jpeg'
+        self.filename = os.path.splitext(os.path.basename(self.loaded.attributes.get('filename')))[0] or 'filename'
+        
+        self.fullfilename = f'{self.filename}.{self.format}'
+        
+        
+    def autorotate_and_resize(self):
+        try:
+            url = f'{self.base_url}/pipeline'
+            operations = [
+                {
+                    "operation": "autorotate",
+                    "params": {}
+                },
+                {
+                    "operation": "resize",
+                    "params": {
+                        "type": self.format,
+                        "quality": 80,
+                        "background": "255,255,255",
+                        "stripmeta": "true",
+                        "height": 1000,
+                        "force": "true",
+                    }
+                }
+            ]
+    
+            files = {'file': (self.fullfilename, self.loaded.buffer)}
+            params = {
+                'operations': json.dumps(operations)
+            }
+    
+            response = requests.post(url, params=params, files=files)
+            if response.status_code == 200:
+                return response.content
+            else:
+                return None
+        except:
+            return None
 
 class ShortHash:
     def __init__(self, input_string):
@@ -78,6 +127,8 @@ class EnvironmentConfigProvider:
         self.gotify_token = self._read_var('GOTIFY_TOKEN')
         self.gotify_priority = int(self._read_var('GOTIFY_PRIORITY') or 8)
         
+        self.imaginary_host = self._read_var('IMAGINARY_HOST')
+        
         self.classify_model = self._read_var('DOCDEPOT_MODEL')
         self.classify_model_threshold = float(self._read_var('DOCDEPOT_MODEL_THRESHOLD') or 0.55)
 
@@ -89,6 +140,11 @@ class EnvironmentConfigProvider:
 
     def get_api_key(self):
         return self.apikey
+    
+    def _get_imaginary(self, loaded):
+        if self.imaginary_host is not None:
+            return ImageAPI(url = self.imaginary_host, loaded=loaded)
+        return None
     
     def _get_gotify(self):
         if self.gotify_host is not None and self.gotify_token is not None:

@@ -92,19 +92,19 @@ class AttachmentResource(Resource):
                 return {"error": "file is required"}, 400
 
             # load file
-            loaded_file = FileLoader(file).load()
+            loaded_file = FileLoader(file, filename=file.filename).load()
             print(loaded_file.attributes)
             
             # Check file size
-            if loaded_file.get('size')==False:
+            if loaded_file.attributes.get('size')==False:
                 return {"error": f"Die Datei muss kleiner als {loaded_file.max_size_mb()}MB sein!"}, 400
             
             # Check if mimetype is accepted
-            if not loaded_file.get('accept_mimetype')==True:
+            if not loaded_file.attributes.get('accept_mimetype', False)==True:
                 return {"error": f"Falscher Dateityp. Erlaubte Dateien sind PDFs und Bilder."}, 400
 
             # do not allow duplicates on upload            
-            if db.check_if_checksum_exists(loaded_file.get('sha256_hash')):
+            if db.check_if_checksum_exists(loaded_file.attributes.get('sha256_hash')):
                 return {"error": "Die Datei ist bereits schon auf dem Server vorhanden."}, 400
 
             # checking if image is blurred
@@ -117,11 +117,23 @@ class AttachmentResource(Resource):
                 if classify_result:
                     if not classify_result.get('status', False):
                         return {"error": "Ungenügende Bildqualität. Bitte auf einen deutlichen und gut ausgeleuchteten Scan/Foto achten."}, 400
+            
+            # Check for imaginary server
+            imaginary = env_vars._get_imaginary(loaded_file)
+            if imaginary:
+                if loaded_file.attributes.get('is_image', False):
+                    compressed_buffer = imaginary.autorotate_and_resize()
+                    if not compressed_buffer:
+                        return {"error": "Fehler beim Komprimieren des Bildes. Bitte ein PDF hochladen."}, 400
+                    
+                    loaded_file.buffer = compressed_buffer
+                    loaded_file.attributes.update({'filename' : imaginary.fullfilename})
 
+            
             dbdata = {
                 'token': data.get('token'),
-                'name': file.filename,
-                'checksum': loaded_file.get('sha256_hash'),
+                'name': loaded_file.attributes.get('filename'),
+                'checksum': loaded_file.attributes.get('sha256_hash'),
             }
 
             # Add attachment to the database
