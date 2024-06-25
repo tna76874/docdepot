@@ -62,6 +62,11 @@ class FileLoader:
     def _check_if_is_pdf(self):
         pdf_mimetypes = [mime_type for mime_type in mimetypes.types_map.values() if 'pdf' in mime_type]
         self.attributes.update({'is_pdf': self.attributes.get('mimetype') in pdf_mimetypes})
+        
+    @none_on_exception
+    def _check_if_filetype_is_accepted(self):
+        accept_file_mimetype = (self.get('is_pdf') or False) or (self.get('is_image') or False)
+        self.attributes.update({'accept_mimetype': accept_file_mimetype})
 
     @none_on_exception
     def check_filesize(self):
@@ -82,6 +87,7 @@ class FileLoader:
         
         self._check_if_is_image()
         self._check_if_is_pdf()
+        self._check_if_filetype_is_accepted()
         
     @none_on_exception
     def _open_file(self, file_input):

@@ -92,13 +92,16 @@ class AttachmentResource(Resource):
                 return {"error": "file is required"}, 400
 
             # load file
-            print(ChecksumCalculator().calc_from_object(file))
             loaded_file = FileLoader(file).load()
             print(loaded_file.attributes)
             
             # Check file size
             if loaded_file.get('size')==False:
                 return {"error": f"Die Datei muss kleiner als {loaded_file.max_size_mb()}MB sein!"}, 400
+            
+            # Check if mimetype is accepted
+            if not loaded_file.get('accept_mimetype')==True:
+                return {"error": f"Falscher Dateityp. Erlaubte Dateien sind PDFs und Bilder."}, 400
 
             # do not allow duplicates on upload            
             if db.check_if_checksum_exists(loaded_file.get('sha256_hash')):
