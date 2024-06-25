@@ -189,7 +189,10 @@ class ImageClassifier:
             response = requests.post(self.url + '/rate', headers=headers, files=files)
 
             if response.status_code == 200:
-                prediction = float(response.json().get('result'))
+                prediction = response.json().get('result')
+                if not prediction:
+                    return None
+                prediction = float(prediction)
                 status = True if prediction < self.threshold else False
                 return {'status': status, 'prediction': prediction}
             else:
