@@ -128,6 +128,13 @@ class AttachmentResource(Resource):
                     
                     loaded_file.buffer = compressed_buffer
                     loaded_file.attributes.update({'filename' : imaginary.fullfilename})
+                    
+                elif loaded_file.attributes.get('is_pdf', False):
+                    compressed_buffer = imaginary.compress_pdf()
+                    if not compressed_buffer:
+                        return {"error": "Fehler beim Komprimieren des PDFs."}, 400
+
+                    loaded_file.buffer = compressed_buffer
 
             
             dbdata = {

@@ -6,8 +6,13 @@ helper modules
 import os
 import requests
 import hashlib
+from PIL import Image
 from classify import *
 import json
+
+import PyPDF2
+from reportlab.pdfgen import canvas
+import io
 
 
 class ImageAPI:
@@ -18,33 +23,139 @@ class ImageAPI:
         self.base_url = url
         self.loaded = loaded
         self.format = 'jpeg'
+        self.size = 1500
         self.filename = os.path.splitext(os.path.basename(self.loaded.attributes.get('filename')))[0] or 'filename'
         
         self.fullfilename = f'{self.filename}.{self.format}'
+
+    def _get_scaled_height(self, width, height):
+        size = self.size
+        # Bestimme das Verhältnis der aktuellen Dimensionen
+        aspect_ratio = width / height
         
+        if width > height:
+            # Skaliere die Breite auf self.config['size']
+            new_width = size
+            new_height = size / aspect_ratio
+        else:
+            # Skaliere die Höhe auf self.config['size']
+            new_height = size
+            new_width = size * aspect_ratio
         
-    def autorotate_and_resize(self):
+        # Gib die skalierten Dimensionen zurück
+        return int(new_height)
+    
+    def _generate_pdf_from_list(self, pages):
+        pdf_writer = PyPDF2.PdfWriter()
+
+        for image_data in pages:
+            if image_data==None:
+                continue
+
+            # Öffne das JPEG-Bild mit PIL
+            image = Image.open(io.BytesIO(image_data))
+            
+            # Erstelle ein BytesIO-Objekt für das PDF
+            buffer = io.BytesIO()
+
+            # Erstelle ein PDF-Canvas
+            pdf_canvas = canvas.Canvas(buffer)
+
+            # Berechne die Größe der PDF-Seite basierend auf der Bildgröße
+            pdf_canvas.setPageSize((image.width, image.height))
+
+            # Füge das Bild in das PDF ein
+            pdf_canvas.drawInlineImage(image, 0, 0)
+
+            # Speichere das PDF-Canvas
+            pdf_canvas.save()
+
+            # Setze das Buffer-Objekt auf den Anfang zurück
+            buffer.seek(0)
+
+            # Füge die aktuelle Seite dem PDF-Schreiber hinzu
+            pdf_writer.add_page(PyPDF2.PdfReader(buffer).pages[0])
+        return pdf_writer
+
+    def compress_pdf(self):
+        try:
+            # Erstelle ein PDF-Reader-Objekt
+            pdf_reader = PyPDF2.PdfReader(io.BytesIO(self.loaded.buffer))
+    
+            # Liste für die Speicherung der einzelnen io-Stream-Objekte
+            output_streams = []
+    
+            # Durchlaufe jede Seite der PDF-Datei
+            for page_num in range(len(pdf_reader.pages)):
+                # Erstelle ein io-Stream-Objekt für jede Seite
+                output_stream = io.BytesIO()
+    
+                # Erstelle ein PDF-Writer-Objekt
+                pdf_writer = PyPDF2.PdfWriter()
+    
+                # Extrahiere die Seite
+                page = pdf_reader.pages[page_num]
+                
+                # Bestimme die skalierte Höhe
+                size = self._get_scaled_height(page.mediabox.width, page.mediabox.height)
+
+                # Füge die Seite zum PDF-Writer hinzu
+                pdf_writer.add_page(page)
+    
+                # Schreibe den Inhalt des PDF-Writer-Objekts in den io-Stream
+                pdf_writer.write(output_stream)
+    
+                # Setze die Position des Streams auf den Anfang
+                output_stream.seek(0)
+    
+                # Füge den io-Stream zur Liste hinzu
+                output_streams.append((output_stream.getvalue(),size))
+ 
+            converted_bytes = list()
+            for image_data in output_streams:
+                converted_bytes.append(self._convert(image_data[0], height = image_data[1], pdf=True))
+            
+            pdf_converted = self._generate_pdf_from_list(converted_bytes)
+
+            with open('test.jpg', 'wb') as new_file:
+                new_file.write(converted_bytes[0])
+            
+            buffer = io.BytesIO()
+            pdf_converted.write(buffer)
+            buffer.seek(0)
+            
+            return buffer.getvalue()
+    
+        except:
+            return None
+        
+    def _convert(self, image_bytes, height = 1000, quality = 80, pdf=False):
         try:
             url = f'{self.base_url}/pipeline'
             operations = [
                 {
-                    "operation": "autorotate",
-                    "params": {}
-                },
-                {
                     "operation": "resize",
                     "params": {
                         "type": self.format,
-                        "quality": 80,
+                        "quality": quality,
                         "background": "255,255,255",
                         "stripmeta": "true",
-                        "height": 1000,
+                        "height": height,
                         "force": "true",
                     }
                 }
             ]
+            if pdf==False:
+                operations = [
+                                {
+                                    "operation": "autorotate",
+                                    "params": {
+                                        "type": self.format,
+                                    }
+                                }
+                             ] + operations
     
-            files = {'file': (self.fullfilename, self.loaded.buffer)}
+            files = {'file': (self.fullfilename, image_bytes)}
             params = {
                 'operations': json.dumps(operations)
             }
@@ -53,9 +164,14 @@ class ImageAPI:
             if response.status_code == 200:
                 return response.content
             else:
+                print(response.text)
                 return None
         except:
             return None
+        
+        
+    def autorotate_and_resize(self):
+        return self._convert(self.loaded.buffer)
 
 class ShortHash:
     def __init__(self, input_string):
