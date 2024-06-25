@@ -171,7 +171,7 @@ class ImageAPI:
         
         
     def autorotate_and_resize(self):
-        return self._convert(self.loaded.buffer)
+        return self._convert(self.loaded.buffer, height = self.size)
 
 class ShortHash:
     def __init__(self, input_string):
