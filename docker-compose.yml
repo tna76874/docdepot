@@ -6,6 +6,17 @@ services:
     expose:
       - 9000
 
+  aiapi:
+    image: ghcr.io/tna76874/binaryaiapi:latest
+    expose:
+      - 5000
+    container_name: aiapi
+    environment:
+      - CNN_API_KEY=test123
+      - CNN_MODEL_PATH=/app/data/model.keras
+    volumes:
+      - ./data:/app/data
+
   docdepot:
   # TAGS: 'latest', 'stable' or dedicated git commit hash 
     image: ghcr.io/tna76874/docdepot:latest
@@ -17,7 +28,8 @@ services:
       - DOCDEPOT_SHOW_INFO=False
       - DOCDEPOT_SHOW_RESPONSE_TIME=False
       - DOCDEPOT_SHOW_TIMESTAMP=False
-      - DOCDEPOT_MODEL=data/model.keras
+      - CNN_HOST=http://aiapi:5000
+      - CNN_API_KEY=test123
       - IMAGINARY_HOST=http://docimaginary:9000
     volumes:
       - ./data:/app/data

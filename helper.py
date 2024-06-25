@@ -245,7 +245,8 @@ class EnvironmentConfigProvider:
         
         self.imaginary_host = self._read_var('IMAGINARY_HOST')
         
-        self.classify_model = self._read_var('DOCDEPOT_MODEL')
+        self.classify_host = self._read_var('CNN_HOST')
+        self.classify_key = self._read_var('CNN_API_KEY')
         self.classify_model_threshold = float(self._read_var('DOCDEPOT_MODEL_THRESHOLD') or 0.55)
 
         self.blur_threshold = float(self._read_var('DOCDEPOT_BLUR_THRESHOLD') or 40)
@@ -268,15 +269,15 @@ class EnvironmentConfigProvider:
         return None
     
     def _get_classify(self):
-        if not self.classify_model:
+        if (not self.classify_host) or (not self.classify_key):
             return None
         
-        if os.path.exists(self.classify_model):
-            try:
-                classifier = ImageClassifier(model_path=self.classify_model, threshold = self.classify_model_threshold)
-                return classifier
-            except:
-                return None
+        try:
+            classifier = ImageClassifier(url=self.classify_host, api_key = self.classify_key, threshold = self.classify_model_threshold)
+            return classifier
+        except:
+            return None
+        
         else:
             return None
 

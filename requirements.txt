@@ -10,4 +10,3 @@ PyPDF2==3.0.1
 python-magic==0.4.27
 reportlab==4.2.0
 SQLAlchemy==2.0.25
-tensorflow==2.16.1

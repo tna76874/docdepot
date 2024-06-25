@@ -4,15 +4,11 @@
 AI Tools
 """
 import os
+import requests
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.models import load_model
 from PIL import Image
 from io import BytesIO
 import cv2
-
-tf.config.set_visible_devices([], 'GPU')
 
 import magic
 import mimetypes
@@ -177,28 +173,31 @@ class ImageLoader:
         except Exception as e:
             print(f'Error loading image: {e}')
             return None
-
+        
 class ImageClassifier:
-    def __init__(self, model_path = './data/model.keras', threshold = 0.55):
-        self.model = load_model(model_path)
+    def __init__(self, url = None, api_key = None, threshold=0.55):
+        self.url = url
+        self.api_key = api_key
         self.threshold = threshold
 
-    def classify_image(self, file_buffer):     
-        try:            
-            img = image.load_img(BytesIO(file_buffer), target_size=(150, 150))
+    def classify_image(self, file_buffer):
+        try:
+            headers = {'Authorization': self.api_key, 'Accept': 'multipart/form-data'}
+            files = {'image': file_buffer}
 
-            img_array = image.img_to_array(img)
-            img_array = np.expand_dims(img_array, axis=0)
-            img_array /= 255.0  # Normalisierung
+            # Sende die POST-Anfrage an den Endpoint mit dem Bild als Datei
+            response = requests.post(self.url + '/rate', headers=headers, files=files)
 
-            # Vorhersage
-            prediction = self.model.predict(img_array)
-            status = True if prediction[0] < self.threshold else False
-            
-            return {'status' : status, 'prediction' : prediction}
-        
+            if response.status_code == 200:
+                prediction = float(response.json().get('result'))
+                status = True if prediction < self.threshold else False
+                return {'status': status, 'prediction': prediction}
+            else:
+                print(f'Fehler beim Senden der Anfrage. Statuscode: {response.status_code}')
+                return None
+
         except Exception as e:
-            print(f'AI CLASSIFY: {e}')
+            print(f'Fehler beim Klassifizieren des Bildes: {e}')
             return None
 
 if __name__ == '__main__':
