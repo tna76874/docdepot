@@ -90,27 +90,27 @@ class AttachmentResource(Resource):
             # check if file is uploaded
             if not file.filename:
                 return {"error": "file is required"}, 400
+
+            # load file
+            print(ChecksumCalculator().calc_from_object(file))
+            loaded_file = FileLoader(file).load()
+            print(loaded_file.attributes)
             
-            # Check file size (max 15MB = 15 * 1024 * 1024 bytes)
-            max_file_size = 15 * 1024 * 1024  # 15MB
-            if len(file.read()) > max_file_size:
-                return {"error": "Die Datei muss kleiner als 15MB sein!"}, 400
-            file.seek(0)
-            
-            # calc checksum
-            checksum = ChecksumCalculator().calc_from_object(file)
+            # Check file size
+            if loaded_file.get('size')==False:
+                return {"error": f"Die Datei muss kleiner als {loaded_file.max_size_mb()}MB sein!"}, 400
 
             # do not allow duplicates on upload            
-            if db.check_if_checksum_exists(checksum):
+            if db.check_if_checksum_exists(loaded_file.get('sha256_hash')):
                 return {"error": "Die Datei ist bereits schon auf dem Server vorhanden."}, 400
 
             # checking if image is blurred
-            if DetectBlur(threshold=env_vars.blur_threshold).detect_blur(file).get('status', False):
+            if DetectBlur(threshold=env_vars.blur_threshold).detect_blur(loaded_file.buffer).get('status', False):
                 return {"error": "Das Bild ist unscharf."}, 400
 
             # AI check on image quality
             if classify:
-                classify_result = classify.classify_image(file)
+                classify_result = classify.classify_image(loaded_file.buffer)
                 if classify_result:
                     if not classify_result.get('status', False):
                         return {"error": "Ungenügende Bildqualität. Bitte auf einen deutlichen und gut ausgeleuchteten Scan/Foto achten."}, 400
@@ -118,7 +118,7 @@ class AttachmentResource(Resource):
             dbdata = {
                 'token': data.get('token'),
                 'name': file.filename,
-                'checksum': checksum,
+                'checksum': loaded_file.get('sha256_hash'),
             }
 
             # Add attachment to the database
@@ -127,7 +127,9 @@ class AttachmentResource(Resource):
             if aid:
                 # Save the attachment file to the ./attachments/ directory
                 attachment_path = f'./{attachmentdir}/{aid}'
-                file.save(attachment_path)
+                with open(attachment_path, 'wb') as new_file:
+                    new_file.write(loaded_file.buffer)
+    
                 response = {
                     "aid": aid,
                     "status": "success"
