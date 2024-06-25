@@ -215,6 +215,12 @@
         font-size: 16px;
         margin-left: 10px;
         }
+
+        .upload-section label.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
     </style>    
 </head>
 <body>
@@ -248,7 +254,7 @@
         </p>
         <div class="upload-section">
             <input type="file" id="fileInput" name="file">
-            <label for="fileInput">Verbesserung hochladen</label>
+            <label for="fileInput" id="uploadLabel">Verbesserung hochladen</label>
         </div>
         {% endif %}
         {% if attachment_list|default([])!=[] %}
@@ -347,6 +353,7 @@
 
         function handleFileUpload() {
                 var fileInput = document.getElementById('fileInput');
+                var uploadLabel = document.getElementById('uploadLabel');
                 
                 if (fileInput) {
                     fileInput.addEventListener('change', function(event) {
@@ -355,6 +362,8 @@
                             var formData = new FormData();
                             formData.append('file', file);
                             formData.append('token', '{{ token }}');
+
+                            uploadLabel.classList.add('disabled');
 
                             fetch('/api/add_attachment', {
                                 method: 'POST',
@@ -371,6 +380,9 @@
                             .catch(error => {
                                 console.error('Error:', error);
                                 alert('Fehler beim Hochladen!');
+                            })
+                            .finally(() => {
+                                uploadLabel.classList.remove('disabled');
                             });
                         }
                     });
