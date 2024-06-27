@@ -175,10 +175,9 @@ class ImageLoader:
             return None
         
 class ImageClassifier:
-    def __init__(self, url = None, api_key = None, threshold=0.55):
+    def __init__(self, url = None, api_key = None, **kwargs):
         self.url = url
         self.api_key = api_key
-        self.threshold = threshold
 
     def classify_image(self, file_buffer):
         try:
@@ -189,12 +188,7 @@ class ImageClassifier:
             response = requests.post(self.url + '/rate', headers=headers, files=files)
 
             if response.status_code == 200:
-                prediction = response.json().get('result')
-                if not prediction:
-                    return None
-                prediction = float(prediction)
-                status = True if prediction < self.threshold else False
-                return {'status': status, 'prediction': prediction}
+                return response.json()
             else:
                 print(f'Fehler beim Senden der Anfrage. Statuscode: {response.status_code}')
                 return None

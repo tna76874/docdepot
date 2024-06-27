@@ -106,17 +106,21 @@ class AttachmentResource(Resource):
             # do not allow duplicates on upload            
             if db.check_if_checksum_exists(loaded_file.attributes.get('sha256_hash')):
                 return {"error": "Die Datei ist bereits schon auf dem Server vorhanden."}, 400
-
-            # checking if image is blurred
+            
+            # checking if image is blurred (... to be removed ...)
             if DetectBlur(threshold=env_vars.blur_threshold).detect_blur(loaded_file.buffer).get('status', False):
                 return {"error": "Das Bild ist unscharf."}, 400
 
-            # AI check on image quality
+            # AI/QUALITY checks
             if classify:
                 classify_result = classify.classify_image(loaded_file.buffer)
-                if classify_result:
-                    if not classify_result.get('status', False):
+                if classify_result!=None:
+                    if classify_result.get('blur', False)==False:
+                        return {"error": "Das Bild ist unscharf."}, 400
+                    elif classify_result.get('cnn', False)==False:
                         return {"error": "Ungenügende Bildqualität. Bitte auf einen deutlichen und gut ausgeleuchteten Scan/Foto achten."}, 400
+                    elif classify_result.get('pass', False)==False:
+                        return {"error": "Ungültige Datei"}, 400
             
             # Check for imaginary server
             imaginary = env_vars._get_imaginary(loaded_file)

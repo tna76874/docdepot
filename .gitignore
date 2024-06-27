@@ -3,6 +3,7 @@ data.db
 data
 documents
 COMMIT_HASH
+unit_*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
