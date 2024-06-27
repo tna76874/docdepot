@@ -116,9 +116,6 @@ class ImageAPI:
                 converted_bytes.append(self._convert(image_data[0], height = image_data[1], pdf=True))
             
             pdf_converted = self._generate_pdf_from_list(converted_bytes)
-
-            with open('test.jpg', 'wb') as new_file:
-                new_file.write(converted_bytes[0])
             
             buffer = io.BytesIO()
             pdf_converted.write(buffer)

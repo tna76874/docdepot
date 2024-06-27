@@ -107,7 +107,7 @@ class FileLoader:
         else:
             self.file = file_input
         
-        self.buffer = self._read_file()     
+        self.buffer = self._read_file()
 
 class DetectBlur:
     def __init__(self, threshold=40):
