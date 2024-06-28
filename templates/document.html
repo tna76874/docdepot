@@ -1,0 +1,119 @@
+<div id="spinnerOverlay" class="spinner-overlay">
+    <div class="spinner"></div>
+</div>
+
+<header>
+    <h1>Dokument Download</h1>
+</header>
+
+{% set github_link = '<a href="' ~ html_settings['github_repo'] ~ '" target="_blank" style="margin-top: 10px; display: inline-block; color: #fff;">' %}
+    {% set github_icon = '<i class="fab fa-github" style="font-size: 24px; margin-right: 5px;"></i>' %}
+    {% set github_repo_text = 'GitHub Repo' %}
+
+{% if document_found|default(True)==True %}
+{% if is_valid==True %}
+<main>
+    <a href="{{ url_for('get_documents', token=token) }}" target="_blank" id="downloadButton" onclick="disableButton()">
+        {{ document['title'] }}
+    </a>
+
+    {% if redirect is not none and html_settings["enable_redirect"]|default(True) == True %}
+    <div class="redirect-button-container">
+        <a href="r/{{ token }}" target="_blank" id="redirectButton">
+            {{ redirect['description'] if redirect['description'] is not none else 'Weiterleitung' }}
+        </a>
+    </div>
+    {% endif %}
+    
+    <h3>Verbesserungen</h3>
+    {% if attachment_info['is_allowed']|default(False) == True %}
+    <p style="font-style: italic; font-size: smaller;">
+        Abgabe möglich bis {{ attachment_info['allow_until']|default('--') }}
+    </p>
+    <div class="upload-section">
+        <input type="file" id="fileInput" name="file">
+        <label for="fileInput" id="uploadLabel">Verbesserung hochladen</label>
+    </div>
+    {% endif %}
+    {% if attachment_list|default([])!=[] %}
+        <ul class="attachment-list">
+            {% for attachment in attachment_list %}
+                <li class="attachment-item">
+                    <a href="/attachment/{{ attachment.aid }}" class="download-link">{{ attachment.name }}</a> {{ attachment.uploaded }}<br>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+    <p>Zu diesem Dokument wurden keine Verbesserungen hochgeladen.</p>
+    {% if attachment_info['is_allowed']|default(False) == False %}
+    <p>Die Abgabe war bis {{ attachment_info['allow_until']|default('--') }} möglich.</p>
+    {% endif %}
+    {% endif %}
+
+    {% if html_settings["show_info"]|default(False) == True %}
+    {% if count > 0 %}
+        <div class="status-section abgerufen">
+            <p>
+                {% if html_settings["show_timestamp"]|default(False) == True %}
+                    <i class="fas fa-check-circle"></i> Abgerufen: {{ first_viewed }} Uhr
+                {% else %}
+                    <i class="fas fa-check-circle"></i> Dokument wurde bereits abgerufen.
+                {% endif %}
+            </p>
+        </div>
+    {% else %}
+        <div class="status-section nicht-abgerufen">
+            <p>
+                <i class="fas fa-exclamation-circle"></i> Dokument ist noch nicht abgerufen.
+            </p>
+        </div>
+    {% endif %}
+    {% endif %}
+
+</main>
+
+<footer>
+    <div class="footer-github">
+        <a href="{{ html_settings['github_repo'] }}" target="_blank" class="footer-link">
+            <i class="fab fa-github"></i>
+        </a>
+    </div>
+    <div class="footer-info">
+    Link gültig bis: {{ document['valid_until'].strftime('%d.%m.%Y') }}</p>
+    {% if (average_time is not none) and (html_settings["show_respose_time"]|default(False) == True) %}
+    <p>mittlere Abrufzeit ca. {{ average_time[0] }} {{ average_time[1] }}</p>
+    {% endif %}
+    </div>
+</footer>
+{% else %}
+<main>
+    <p>Link abgelaufen</p>
+</main>
+
+<footer>
+    <div class="footer-github">
+        <a href="{{ html_settings['github_repo'] }}" target="_blank" class="footer-link">
+            <i class="fab fa-github"></i>
+        </a>
+    </div>
+</footer>
+
+{% endif %}
+{% else %}
+<main>
+    <p>Dokument nicht gefunden</p>
+</main>
+
+<footer>
+    <div class="footer-github">
+        <a href="{{ html_settings['github_repo'] }}" target="_blank" class="footer-link">
+            <i class="fab fa-github"></i>
+        </a>
+    </div>
+</footer>
+{% endif %}
+
+
+<script>
+    {% include 'scripts_document.js' %}
+</script>

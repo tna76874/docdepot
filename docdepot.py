@@ -738,9 +738,9 @@ def get_documents(token):
                 file_path = f'{documentdir}/{document["did"]}'
                 return send_file(file_path, as_attachment=False, download_name=document["filename"])
             else:
-                return render_template('index.html', document_found=True, is_valid=False, html_settings=html_settings)
+                return render_template('main.html', page_name='document', document_found=True, is_valid=False, html_settings=html_settings)
         else:
-            return render_template('index.html', document_found=False, html_settings=html_settings)
+            return render_template('main.html', page_name='document', document_found=False, html_settings=html_settings)
     except Exception as e:
         return {"error": str(e)}, 500
     
@@ -802,7 +802,8 @@ def render_index(token):
             }
             
             return render_template(
-                'index.html',
+                'main.html',
+                page_name='document',
                 token=token,
                 document=document,
                 count=count,
@@ -815,7 +816,7 @@ def render_index(token):
                 attachment_info=attachment_info,
             )
         else:
-            return render_template('index.html', document_found=False, html_settings=html_settings)
+            return render_template('main.html', page_name='document', document_found=False, html_settings=html_settings)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
