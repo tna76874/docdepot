@@ -78,8 +78,8 @@ class AttachmentResource(Resource):
             performed_checks = CheckHistory()
             
             document = db.get_document_from_token(data.get('token'))
-            performed_checks.add_check("Dokument")
             if not document:
+                performed_checks.add_check("Dokument")
                 performed_checks.update_last(passed = False, description="Dokument nicht gefunden")
                 return performed_checks.get_checks(), 400
             
