@@ -75,52 +75,79 @@ class AttachmentResource(Resource):
             data = request.form
             file = request.files.get('file')
             
+            performed_checks = CheckHistory()
+            
             document = db.get_document_from_token(data.get('token'))
+            performed_checks.add_check("Dokument")
             if not document:
-                return {"error": "Dokument nicht gefunden"}, 400
+                performed_checks.update_last(passed = False, description="Dokument nicht gefunden")
+                return performed_checks.get_checks(), 400
             
             
+            performed_checks.add_check("Abgabefrist")
             if not db._allow_attachment_for_token(data.get('token')):
-                return {"error": "Abgabefrist abgelaufen"}, 400
-                
+                performed_checks.update_last(passed = False, description="Abgabefrist abgelaufen")
+                return performed_checks.get_checks(), 400
+            else:
+                performed_checks.update_last(passed = True, description="Abgabefrist gültig")
 
             if not file:
-                return {"error": "file is required"}, 400
+                performed_checks.add_check("Datei-Upload")
+                erformed_checks.update_last(passed = False, description="Keine Datei hochgeladen")
+                return performed_checks.get_checks(), 400
 
             # check if file is uploaded
             if not file.filename:
-                return {"error": "file is required"}, 400
+                performed_checks.add_check("Dateiname")
+                erformed_checks.update_last(passed = False, description="Kein Dateiname enthalten")
+                return performed_checks.get_checks(), 400
 
             # load file
             loaded_file = FileLoader(file, filename=file.filename).load()
             print(loaded_file.attributes)
             
             # Check file size
+            performed_checks.add_check("Dateigröße")
             if loaded_file.attributes.get('size')==False:
-                return {"error": f"Die Datei muss kleiner als {loaded_file.max_size_mb()}MB sein!"}, 400
+                performed_checks.update_last(passed = False, description=f"Die Datei muss kleiner als {loaded_file.max_size_mb()}MB sein!")
+                return performed_checks.get_checks(), 400
+            else:
+                performed_checks.update_last(passed = True, description=f"Die Datei ist kleiner als {loaded_file.max_size_mb()}MB")
             
             # Check if mimetype is accepted
+            performed_checks.add_check("Dateityp")
             if not loaded_file.attributes.get('accept_mimetype', False)==True:
-                return {"error": f"Falscher Dateityp. Erlaubte Dateien sind PDFs und Bilder."}, 400
+                performed_checks.update_last(passed = False, description=f"Falscher Dateityp ({loaded_file.attributes.get('mimetype', '--')}). Erlaubte Dateien sind PDFs und Bilder.")
+                return performed_checks.get_checks(), 400
+            else:
+                performed_checks.update_last(passed = True, description=f"Erlaubter Dateityp (PDFs und Bilder).")
 
-            # do not allow duplicates on upload            
+            # do not allow duplicates on upload    
+            performed_checks.add_check("Duplikat")
             if db.check_if_checksum_exists(loaded_file.attributes.get('sha256_hash')):
-                return {"error": "Die Datei ist bereits schon auf dem Server vorhanden."}, 400
-            
-            # checking if image is blurred (... to be removed ...)
-            if DetectBlur(threshold=env_vars.blur_threshold).detect_blur(loaded_file.buffer).get('status', False):
-                return {"error": "Das Bild ist unscharf."}, 400
+                performed_checks.update_last(passed = False, description="Die Datei ist bereits schon auf dem Server vorhanden.")
+                return performed_checks.get_checks(), 400
+            else:
+                performed_checks.update_last(passed = True, description="Die Datei wurde vorher noch nicht hochgeladen.")
 
             # AI/QUALITY checks
             if classify:
                 classify_result = classify.classify_image(loaded_file.buffer)
                 if classify_result!=None:
                     if classify_result.get('blur', False)==False:
-                        return {"error": "Das Bild ist unscharf."}, 400
+                        performed_checks.add_check("Bildschärfe")
+                        performed_checks.update_last(passed = False, description="Das Bild ist unscharf.")
+                        return performed_checks.get_checks(), 400
                     elif classify_result.get('cnn', False)==False:
-                        return {"error": "Ungenügende Bildqualität. Bitte auf einen deutlichen und gut ausgeleuchteten Scan/Foto achten."}, 400
+                        performed_checks.add_check("AI-Check")
+                        performed_checks.update_last(passed = False, description="Ungenügende Bildqualität. Bitte auf einen deutlichen und gut ausgeleuchteten Scan/Foto achten.")
+                        return performed_checks.get_checks(), 400
                     elif classify_result.get('pass', False)==False:
-                        return {"error": "Ungültige Datei"}, 400
+                        performed_checks.add_check("Bild-Checks", passed=False, description="Ungültige Datei")
+                        return performed_checks.get_checks(), 400
+                    
+            performed_checks.add_check("Bildschärfe", passed=True, description="Das Bild ist scharf.")
+            performed_checks.add_check("AI-Check", passed=True, description="Die KI nimmt das Bild an.")
             
             # Check for imaginary server
             imaginary = env_vars._get_imaginary(loaded_file)
@@ -128,7 +155,8 @@ class AttachmentResource(Resource):
                 if loaded_file.attributes.get('is_image', False):
                     compressed_buffer = imaginary.autorotate_and_resize()
                     if not compressed_buffer:
-                        return {"error": "Fehler beim Komprimieren des Bildes. Bitte ein PDF hochladen."}, 400
+                        performed_checks.add_check("Bild-Kompression", passed=False, description="Fehler beim Komprimieren des Bildes. Bitte ein PDF hochladen.")
+                        return performed_checks.get_checks(), 400
                     
                     loaded_file.buffer = compressed_buffer
                     loaded_file.attributes.update({'filename' : imaginary.fullfilename})
@@ -136,7 +164,8 @@ class AttachmentResource(Resource):
                 elif loaded_file.attributes.get('is_pdf', False):
                     compressed_buffer = imaginary.compress_pdf()
                     if not compressed_buffer:
-                        return {"error": "Fehler beim Komprimieren des PDFs."}, 400
+                        performed_checks.add_check("PDF-Kompression", passed=False, description="Fehler beim Komprimieren des PDFs.")
+                        return performed_checks.get_checks(), 400
 
                     loaded_file.buffer = compressed_buffer
 
@@ -164,7 +193,7 @@ class AttachmentResource(Resource):
                     hash_sid = ShortHash(document["user_uid"]).get()
                     gotify.send(f'{document["title"]}\n{hash_sid}\n{request.scheme}://{request.host}/{dbdata["token"]}')
                     
-                return response, 201
+                return performed_checks.get_checks(), 201
             else:
                 response = {
                     "error": "Token not found",

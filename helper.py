@@ -14,6 +14,25 @@ import PyPDF2
 from reportlab.pdfgen import canvas
 import io
 
+class CheckHistory:
+    def __init__(self):
+        self.performed_checks = []
+
+    def add_check(self, short, passed = None, description = None):
+        self.performed_checks.append({"passed": passed, "description": description, "short": short})
+
+    def get_checks(self):
+        return self.performed_checks
+
+    def update_last(self, passed=None, description=None, short=None):
+        if self.performed_checks:
+            last_check = self.performed_checks[-1]
+            if passed is not None:
+                last_check["passed"] = passed
+            if description is not None:
+                last_check["description"] = description
+            if short is not None:
+                last_check["short"] = short
 
 class ImageAPI:
     def __init__(self, url='http://localhost:9000', loaded = None):

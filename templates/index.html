@@ -407,7 +407,8 @@
                                 if (data.status === 'success') {
                                     location.reload();
                                 } else {
-                                    alert('Error: ' + data.error);
+                                    var errorDescription = data[data.length - 1].description;
+                                    alert('Error: ' + errorDescription);
                                 }
                             })
                             .catch(error => {
