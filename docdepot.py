@@ -835,6 +835,7 @@ def render_summary(summarytoken):
         summary_info = db._get_tokens_for_sid_from_summary(summarytoken)
         
         if summary_info:
+            db._add_summary_click_event(summarytoken)
             return render_template(
                 'main.html',
                 page_name='summary',
