@@ -248,6 +248,34 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        #checkLogOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            color: white;
+            padding: 20px;
+        }
+
+        #checkLogContent {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 80%;
+            margin: 20% auto;
+        }
+
+        .closeButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
     </style>    
 </head>
 <body>
@@ -382,6 +410,33 @@
             }, 10000);
         }
 
+        function openCheckLogOverlay(data) {
+            var checkLogOverlay = document.createElement('div');
+            checkLogOverlay.id = 'checkLogOverlay';
+
+            var checkLogContent = document.createElement('div');
+            checkLogContent.id = 'checkLogContent';
+
+            var closeButton = document.createElement('span');
+            closeButton.className = 'closeButton';
+            closeButton.textContent = 'X';
+            closeButton.addEventListener('click', function() {
+                document.body.removeChild(checkLogOverlay);
+            });
+
+            var errorList = document.createElement('ul');
+            data.forEach(function(check) {
+                var listItem = document.createElement('li');
+                listItem.textContent = 'Status: ' + check.passed + ', Short: ' + check.short + ', Description: ' + check.description;
+                errorList.appendChild(listItem);
+            });
+
+            checkLogContent.appendChild(closeButton);
+            checkLogContent.appendChild(errorList);
+            checkLogOverlay.appendChild(checkLogContent);
+            document.body.appendChild(checkLogOverlay);
+        }
+
         function handleFileUpload() {
                 var fileInput = document.getElementById('fileInput');
                 var uploadLabel = document.getElementById('uploadLabel');
@@ -410,7 +465,8 @@
                                 if (PassedStatus === true) {
                                     location.reload();
                                 } else {
-                                    alert('Error: ' + Description);
+                                    // alert('Error: ' + Description);
+                                    openCheckLogOverlay(data);
                                 }
                             })
                             .catch(error => {
