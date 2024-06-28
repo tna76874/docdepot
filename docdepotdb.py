@@ -94,7 +94,26 @@ class Attachment(Base):
     did = Column(Integer, ForeignKey('documents.did'))
     name = Column(String)
     checksum = Column(String)
-    uploaded = Column(DateTime, default=lambda: datetime.now(local_timezone))    
+    uploaded = Column(DateTime, default=lambda: datetime.now(local_timezone))
+    
+class Summarys(Base):
+    """
+    Class representing a summary token in the database.
+    """
+    __tablename__ = 'summarys'
+    sumtoken = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    sid = Column(String, ForeignKey('users.uid'))
+    create = Column(DateTime, default=lambda: datetime.now(local_timezone))
+    
+class SummaryEvents(Base):
+    """
+    Class representing a summary event in the database.
+    """
+    __tablename__ = 'summary_events'
+    seid = Column(Integer, primary_key=True, autoincrement=True)
+    sumtoken = Column(String, ForeignKey('summarys.sumtoken'))
+    date = Column(DateTime, default=lambda: datetime.now(local_timezone))
+    event = Column(String)
 
 class DatabaseManager:
     """
@@ -192,6 +211,66 @@ class DatabaseManager:
                             for event in events_with_nan:
                                 event.event = 'download'
                             self.session.commit()
+
+    @none_on_exception                            
+    def _add_summary_click_event(self, sumtoken):
+        """
+        Adds a click event for a summary token.
+
+        :param sumtoken: The summary token ID for which to add the click event.
+        """
+        with self.get_session() as session:
+            # Find the summary token in the database
+            summary_token = session.query(Summarys).filter_by(sumtoken=sumtoken).first()
+
+            if summary_token:
+                click_event = SummaryEvents(event='click', sumtoken=summary_token.sumtoken)
+                session.add(click_event)
+                session.commit()
+
+    @none_on_exception                            
+    def _get_tokens_for_sid_from_summary(self, sumtoken):
+        """
+        Retrieves all document tokens for a summary token that were created before the summary token's create datetime.
+
+        :param sumid: The summary token ID for which to retrieve document tokens.
+        :return: A list of document tokens if successful, otherwise an empty list.
+        """
+        with self.get_session() as session:
+            summary_token = session.query(Summarys).filter_by(sumtoken=sumtoken).first()
+
+            if summary_token:
+                summary_create_datetime = summary_token.create
+
+                document_tokens = session.query(Token.token, Document.title, Document.upload_datetime).join(Document).join(User).filter(
+                    User.uid == summary_token.sid,
+                    Token.create < summary_create_datetime
+                ).all()
+
+                document_tokens = [{'token': token.token, 'title': token.title, 'date' : token.upload_datetime.strftime('%d.%m.%Y')} for token in document_tokens]
+
+                return document_tokens
+            else:
+                return []
+
+    @none_on_exception
+    def _create_summary_token_for_sid(self, sid):
+        """
+        Creates a summary token for a given sid (if it exists) and returns it.
+
+        :param sid: The user ID (sid) for which to create a summary token.
+        :return: The created summary token if successful, otherwise None.
+        """
+        with self.get_session() as session:
+            user = session.query(User).filter_by(uid=sid).first()
+
+            if user:
+                summary_token = Summarys(sid=sid)
+                session.add(summary_token)
+                session.commit()
+                return summary_token.sumtoken
+            else:
+                return None
 
     def _get_deadline_for_attachment(self, token_value):
         """
