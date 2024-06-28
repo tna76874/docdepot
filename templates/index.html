@@ -404,11 +404,13 @@
                             })
                             .then(response => response.json())
                             .then(data => {
-                                if (data.status === 'success') {
+                                var Description = data[data.length - 1].description;
+                                var PassedStatus = data[data.length - 1].passed;
+
+                                if (PassedStatus === true) {
                                     location.reload();
                                 } else {
-                                    var errorDescription = data[data.length - 1].description;
-                                    alert('Error: ' + errorDescription);
+                                    alert('Error: ' + Description);
                                 }
                             })
                             .catch(error => {

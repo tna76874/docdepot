@@ -146,8 +146,8 @@ class AttachmentResource(Resource):
                         performed_checks.add_check("Bild-Checks", passed=False, description="Ungültige Datei")
                         return performed_checks.get_checks(), 400
                     
-            performed_checks.add_check("Bildschärfe", passed=True, description="Das Bild ist scharf.")
-            performed_checks.add_check("AI-Check", passed=True, description="Die KI nimmt das Bild an.")
+                performed_checks.add_check("Bildschärfe", passed=True, description="Das Bild ist scharf.")
+                performed_checks.add_check("AI-Check", passed=True, description="Die KI nimmt das Bild an.")
             
             # Check for imaginary server
             imaginary = env_vars._get_imaginary(loaded_file)
