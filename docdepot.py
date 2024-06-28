@@ -820,6 +820,34 @@ def render_index(token):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+@app.route('/s/<summarytoken>')
+def render_summary(summarytoken):
+    """
+    Render the summary page with summary token information.
+
+    Parameters:
+    - summarytoken: Unique summary token for accessing the summary.
+
+    Returns:
+    - Rendered HTML template or redirect to empty_page if summary token not found.
+    """
+    try:
+        summary_info = db._get_tokens_for_sid_from_summary(summarytoken)
+        
+        if summary_info:
+            return render_template(
+                'main.html',
+                page_name='summary',
+                summary_token=summarytoken,
+                summary_info=summary_info,
+                html_settings=html_settings
+            )
+        else:
+            return redirect(url_for('empty_page'))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    
 @app.route('/')
 def empty_page():
     """

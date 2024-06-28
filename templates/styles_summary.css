@@ -1,0 +1,29 @@
+.token-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+.token-item {
+    flex: 0 1 70%;
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    text-align: center;
+}
+
+.token-link {
+    text-decoration: none;
+    color: #ffffff;
+}
+
+.token-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.token-date {
+    color: #ffffff;
+}

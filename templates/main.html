@@ -12,6 +12,7 @@
     {% elif page_name|default('document') == 'summary' %}
     <title>Übersicht Dokumente</title>
     <style>{% include 'styles_document.css' %}</style>
+    <style>{% include 'styles_summary.css' %}</style>
     {% endif %}
   
 </head>
@@ -20,7 +21,7 @@
     {% if page_name|default('document') == 'document' %}
     {% include 'document.html' %}
     {% elif page_name|default('document') == 'summary' %}
-    <p>NONE</p>
+    {% include 'summary.html' %}
     {% endif %}
 
 </body>

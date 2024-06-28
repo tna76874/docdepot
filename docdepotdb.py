@@ -251,7 +251,7 @@ class DatabaseManager:
 
                 return document_tokens
             else:
-                return []
+                return None
 
     @none_on_exception
     def _create_summary_token_for_sid(self, sid):

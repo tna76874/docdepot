@@ -1,0 +1,10 @@
+<div class="token-list">
+    {% for token_info in summary_info %}
+        <div class="token-item">
+            <a href="/{{ token_info['token'] }}" target="_blank" class="token-link">
+                <div class="token-title">{{ token_info['title'] }}</div>
+                <div class="token-date">vom {{ token_info['date'] }}</div>
+            </a>
+        </div>
+    {% endfor %}
+</div>
