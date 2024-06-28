@@ -350,6 +350,36 @@ class DeleteUserResource(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
+class CreateSummaryTokenResource(Resource):
+    def post(self):
+        """
+        Endpoint for getting the summary token based on 'sid'.
+
+        Request Body:
+        {
+            "sid": "Value of the sid to get the summary token for."
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            sid = data.get('sid')
+
+            if sid:
+                sumtoken = db._create_summary_token_for_sid(sid)
+                if sumtoken is not None:
+                    return {"token": sumtoken}, 200
+                else:
+                    return {"message": "Summary token not found for the provided sid."}, 404
+            else:
+                return {"error": "sid is required in the request body."}, 400
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+
 class UpdateTokenValidUntilResource(Resource):
     def put(self):
         """
@@ -681,6 +711,7 @@ api.add_resource(GetEventsResource, '/api/get_events')
 api.add_resource(GetDocumentsResource, '/api/get_documents')
 api.add_resource(GetUsersResource, '/api/get_users')
 api.add_resource(GetAttachmentListResource, '/api/get_attachments')
+api.add_resource(CreateSummaryTokenResource, '/api/create_summary_token')
 api.add_resource(UpdateUserExpiryDateResource, '/api/update_user_expiry_date')
 api.add_resource(SetAllUsersExpiryDateResource, '/api/set_all_users_expiry_date')
 api.add_resource(SetAllAttachmentsExpiryDateResource, '/api/set_all_attachments_expiry_dates')

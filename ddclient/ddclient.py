@@ -123,6 +123,30 @@ class DocDepotManager:
             except ValueError:
                 return f"Error: {response.status_code}, Response content: {response.text}"
 
+    def generate_summary_token_for_sid(self, sid):
+        """
+        Generate a new token for a document ID.
+    
+        Parameters:
+        - sid: Session ID.
+    
+        Returns:
+        - token: Unique token for doument summary.
+        """
+        url = urljoin(self.api_url+'/', 'create_summary_token')
+        response = requests.post(url, headers=self.headers, json={'sid': sid})
+    
+        if response.status_code == 200:
+            self.success = True
+            return response.json().get('token')
+        else:
+            self.success = False
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
+
     def generate_token_for_document(self, did):
         """
         Generate a new token for a document ID.
