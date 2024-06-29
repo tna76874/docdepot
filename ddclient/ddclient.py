@@ -99,6 +99,7 @@ class DocDepotManager:
             'title': kwargs['title'],
             'filename': kwargs['filename'],
             'user_uid': kwargs['user_uid'],
+            'allow_attachment' : kwargs.get('allow_attachment', True),
             'checksum': checksum,
         }
 

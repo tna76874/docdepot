@@ -53,7 +53,7 @@ if env_vars.cleanup_db_on_start:
     db.delete_orphans()
     db._calculate_missing_checksums()
     db._delete_duplicates_from_attachments()
-    db._ensure_attachment_deadlines()
+    db._db_migration()
 
 # Initialize Flask app and API
 app = Flask(__name__)
@@ -81,6 +81,10 @@ class AttachmentResource(Resource):
             if not document:
                 performed_checks.add_check("Dokument")
                 performed_checks.update_last(passed = False, description="Dokument nicht gefunden")
+                return performed_checks.get_checks(), 400
+            
+            if not document.get('allow_attachment', False):
+                performed_checks.add_check("Verbesserung", passed = False, description="Für dieses Dokument ist keine Verbesserung freigeschaltet.")
                 return performed_checks.get_checks(), 400
             
             
@@ -237,12 +241,13 @@ class DocumentResource(Resource):
             # check if file is uploaded
             if not file.filename:
                 return {"error": "file is required"}, 400
-
+            
             dbdata = {
                 'title': data.get('title'),
                 'filename': data.get('filename'),
                 'user_uid': data.get('user_uid'),
                 'checksum' : data.get('checksum', None),
+                'allow_attachment' : data.get('allow_attachment') == 'True',
             }
 
             # Add document to the database

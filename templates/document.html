@@ -25,6 +25,7 @@
     </div>
     {% endif %}
     
+    {% if document['allow_attachment']|default(True) == True %}
     <h3>Verbesserungen</h3>
     {% if attachment_info['is_allowed']|default(False) == True %}
     <p style="font-style: italic; font-size: smaller;">
@@ -47,6 +48,7 @@
     <p>Zu diesem Dokument wurden keine Verbesserungen hochgeladen.</p>
     {% if attachment_info['is_allowed']|default(False) == False %}
     <p>Die Abgabe war bis {{ attachment_info['allow_until']|default('--') }} möglich.</p>
+    {% endif %}
     {% endif %}
     {% endif %}
 

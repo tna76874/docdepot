@@ -4,7 +4,7 @@
 A simple database management system for storing users, documents, tokens, and events.
 """
 from contextlib import contextmanager
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, ForeignKey, func, and_, MetaData, inspect, text, desc
+from sqlalchemy import create_engine, Column, String, Boolean, Integer, DateTime, ForeignKey, func, and_, MetaData, inspect, text, desc
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, sessionmaker, Session, aliased, declarative_base, joinedload
 from sqlalchemy.exc import IntegrityError
@@ -56,6 +56,7 @@ class Document(Base):
     filename = Column(String)
     checksum = Column(String)
     upload_datetime = Column(DateTime, default=lambda: datetime.now(local_timezone))
+    allow_attachment = Column(Boolean, default=True)
     user_uid = Column(String, ForeignKey('users.uid'))
     user = relationship('User', back_populates='documents')
     tokens = relationship('Token', back_populates='document', cascade='all, delete-orphan')
@@ -306,6 +307,10 @@ class DatabaseManager:
                 return False
         except:
             return False
+        
+    def _db_migration(self):
+        self._ensure_attachment_deadlines()
+        self._ensure_allow_attachment_bool()
                             
     def _ensure_attachment_deadlines(self):
         """
@@ -321,6 +326,19 @@ class DatabaseManager:
             
             # Commit changes to the database
             session.commit()
+
+    def _ensure_allow_attachment_bool(self):
+        """
+        Sets allow_attachment to True for documents with None allow_attachment.
+        """
+        with self.get_session() as session:
+            documents = session.query(Document).filter(Document.allow_attachment == None).all()
+    
+            for document in documents:
+                document.allow_attachment = True
+            
+            session.commit()
+
                             
     def check_if_checksum_exists(self, checksum):
         with self.get_session() as session:
@@ -757,8 +775,7 @@ class DatabaseManager:
         :param token_value: The value of the token to retrieve document information.
         :return: A dictionary containing document information, or None if not found.
         """
-        session = self.session
-        try:
+        with self.get_session() as session:
             token = session.query(Token).filter_by(token=token_value).first()
             if token:
                 document = token.document
@@ -779,6 +796,7 @@ class DatabaseManager:
                         'upload_datetime': document.upload_datetime,
                         'user_uid': document.user_uid,
                         'valid_until': nearest_valid_until,
+                        'allow_attachment': document.allow_attachment,
                     }
                 else:
                     print(f"Document not found for Token: {token_value}")
@@ -786,11 +804,7 @@ class DatabaseManager:
             else:
                 print(f"Token not found: {token_value}")
                 return None
-        except Exception as e:
-            print(f"Error getting document from Token: {token_value} - {e}")
-            return None
-        finally:
-            session.close()
+
 
     def add_event(self, token_value, event=None):
         """
