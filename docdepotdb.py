@@ -448,7 +448,7 @@ class DatabaseManager:
             attachment = session.query(Attachment).filter(Attachment.aid == aid).first()
             if attachment:
                 document = session.query(Document).filter(Document.did == attachment.did).first()
-                if document
+                if document:
                     if document.allow_attachment:
                         return {
                             'aid': attachment.aid,
@@ -991,6 +991,20 @@ class DatabaseManager:
                     token.allow_until = new_allow_until
     
                 session.commit()
+
+    def update_document_attachment_status(self, doc_status_list):
+        """
+        Update the 'allow_attachment' status for documents based on the provided list of dictionaries.
+    
+        :param doc_status_list: A list of dictionaries containing 'did' (Document ID) and 'allow_attachment' (Boolean) status.
+        """
+        with self.get_session() as session:
+            for doc_status in doc_status_list:
+                document = session.query(Document).filter(Document.did == doc_status['did']).first()
+                if document:
+                    document.allow_attachment = doc_status.get('allow_attachment', True)
+            session.commit()
+
             
     def update_token_valid_until(self, token_value, new_valid_until):
         """

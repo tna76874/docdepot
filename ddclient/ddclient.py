@@ -241,6 +241,28 @@ class DocDepotManager:
             except ValueError:
                 return f"Error: {response.status_code}, Response content: {response.text}"
             
+    def update_document_attachment_status(self, doc_status_list):
+        """
+        Update the 'allow_attachment' status of documents.
+    
+        Parameters:
+        - doc_status_list: List of dictionaries containing 'did' (Document ID) and 'allow_attachment' status.
+    
+        Returns:
+        - message: A success or error message.
+        """
+        url = urljoin(self.api_url+'/', 'update_document_attachment_status')
+        response = requests.put(url, headers=self.headers, json={'doc_status_list': doc_status_list})
+    
+        if response.status_code == 200:
+            return {"message": "Document attachment status updated successfully."}
+        else:
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
+            
     def convert_str_to_datetime(self, data):
         """
         Convert string representations of datetime to datetime objects.

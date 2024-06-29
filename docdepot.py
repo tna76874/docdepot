@@ -411,6 +411,35 @@ class UpdateTokenValidUntilResource(Resource):
             return {"message": f"Token with value {token_value} updated successfully."}, 200
         except Exception as e:
             return {"error": str(e)}, 500
+        
+class UpdateDocumentAttachmentStatusResource(Resource):
+    def put(self):
+        """
+        Endpoint for updating the 'allow_attachment' status of documents.
+
+        Request Body:
+        {
+            "doc_status_list": [
+                {"did": "Document ID 1", "allow_attachment": true},
+                {"did": "Document ID 2", "allow_attachment": false},
+                ...
+            ]
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+
+            data = request.get_json()
+            doc_status_list = data.get('doc_status_list')
+
+            # Update the 'allow_attachment' status of documents
+            db.update_document_attachment_status(doc_status_list)
+
+            return {"message": "Document attachment status updated successfully."}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
 
 class AverageTimeForAllUsersResource(Resource):
     def get(self):
@@ -709,6 +738,7 @@ api.add_resource(GenerateTokenResource, '/api/generate_token')
 api.add_resource(DeleteTokenResource, '/api/delete_token')
 api.add_resource(DeleteUserResource, '/api/delete_user')
 api.add_resource(UpdateTokenValidUntilResource, '/api/update_token_valid_until')
+api.add_resource(UpdateDocumentAttachmentStatusResource, '/api/update_document_attachment_status')
 api.add_resource(AverageTimeForAllUsersResource, '/api/average_time_for_all_users')
 api.add_resource(RenameUsersResource, '/api/rename_users')
 api.add_resource(DDClientVersionResource, '/api/ddclient_version')
