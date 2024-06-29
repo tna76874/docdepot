@@ -447,11 +447,18 @@ class DatabaseManager:
         with self.get_session() as session:
             attachment = session.query(Attachment).filter(Attachment.aid == aid).first()
             if attachment:
-                return {
-                    'aid': attachment.aid,
-                    'name': attachment.name,
-                    'uploaded': attachment.uploaded
-                }
+                document = session.query(Document).filter(Document.did == attachment.did).first()
+                if document
+                    if document.allow_attachment:
+                        return {
+                            'aid': attachment.aid,
+                            'name': attachment.name,
+                            'uploaded': attachment.uploaded
+                        }
+                    else:
+                        return None
+                else:
+                    return None
             else:
                 return None
 
