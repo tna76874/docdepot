@@ -829,7 +829,8 @@ def get_documents(token):
             if document['valid_until'] >= current_time:
                 db.add_event(token, event = 'download')
                 file_path = f'{documentdir}/{document["did"]}'
-                loaded_file = FileLoader(file_path, filename=document["filename"], password = request.args.get('p'))
+                password = request.args.get('p')
+                loaded_file = FileLoader(file_path, filename=document["filename"], password = password).load()
 
                 return send_file(loaded_file.get_bytestream(), as_attachment=False, download_name=loaded_file.attributes.get('filename'))
             else:
