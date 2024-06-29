@@ -14,6 +14,7 @@ import magic
 import mimetypes
 from functools import wraps
 import hashlib
+import PyPDF2
 
 def none_on_exception(func):
     @wraps(func)
@@ -26,11 +27,12 @@ def none_on_exception(func):
     return wrapper
 
 class FileLoader:
-    def __init__(self, file_input, max_file_size = 15 * 1024 * 1024, filename = None):
+    def __init__(self, file_input, max_file_size = 15 * 1024 * 1024, filename = None, password = None):
         self.attributes =   {
                             'filename' : filename,
                             }
         self.max_file_size = max_file_size
+        self.password = password
         self.load_buffer(file_input)
 
     def __del__(self):
@@ -47,7 +49,28 @@ class FileLoader:
 
     def max_size_mb(self):
         return self.max_file_size / (1024 * 1024)
-    
+
+    @none_on_exception
+    def _decrypt_pdf(self):
+        pdf_reader = PyPDF2.PdfReader(BytesIO(self.buffer))
+        pdf_reader.decrypt(self.password)
+        pdf_writer = PyPDF2.PdfWriter()
+        for page in pdf_reader.pages:
+            pdf_writer.add_page(page)
+        pdf_buffer = BytesIO()
+        pdf_writer.write(pdf_buffer)
+        pdf_buffer.seek(0)
+        self.buffer = pdf_buffer.read()
+        self._check_if_pdf_is_encrypted()
+
+    @none_on_exception
+    def _check_if_pdf_is_encrypted(self):
+        pdf_buffer = BytesIO(self.buffer)
+        pdf_reader = PyPDF2.PdfReader(pdf_buffer)
+        is_encrypted = pdf_reader.is_encrypted == True
+        self.attributes.update({'pdf_is_encrypted': is_encrypted})
+        return is_encrypted
+
     @none_on_exception
     def _check_if_is_image(self):
         image_mimetypes = [mimetype for mimetype in mimetypes.types_map.values() if mimetype.startswith('image')] + ['image/heic']
@@ -84,6 +107,11 @@ class FileLoader:
         self._check_if_is_pdf()
         self._check_if_filetype_is_accepted()
         
+        if self.attributes.get('is_pdf')==True:
+            if self._check_if_pdf_is_encrypted() and self.password!=None:
+                self._decrypt_pdf()
+            
+        
     @none_on_exception
     def _open_file(self, file_input):
         self.file = open(file_input, 'rb')
@@ -97,6 +125,13 @@ class FileLoader:
     @none_on_exception
     def _close_file(self):
         self.file.close()
+
+    @none_on_exception
+    def get_bytestream(self):
+        file_buffer = BytesIO()
+        file_buffer.write(self.buffer)
+        file_buffer.seek(0)
+        return file_buffer
     
     @none_on_exception
     def load_buffer(self, file_input):
