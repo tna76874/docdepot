@@ -880,6 +880,7 @@ def render_index(token):
                 'main.html',
                 page_name='document',
                 token=token,
+                password = request.args.get('p'),
                 document=document,
                 count=count,
                 first_viewed=first_viewed,
@@ -914,6 +915,7 @@ def render_summary(summarytoken):
             return render_template(
                 'main.html',
                 page_name='summary',
+                password = request.args.get('p'),
                 summary_token=summarytoken,
                 summary_info=summary_info,
                 html_settings=html_settings

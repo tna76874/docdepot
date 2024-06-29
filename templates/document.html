@@ -13,7 +13,7 @@
 {% if document_found|default(True)==True %}
 {% if is_valid==True %}
 <main>
-    <a href="{{ url_for('get_documents', token=token) }}" target="_blank" id="downloadButton" onclick="disableButton()">
+    <a href="{{ url_for('get_documents', token=token) }}{{ '?p='+password if password!=None else '' }}" target="_blank" id="downloadButton" onclick="disableButton()">
         {{ document['title'] }}
     </a>
 
