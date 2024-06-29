@@ -72,8 +72,7 @@ class AttachmentDownloadResource(Resource):
     def get(self, aid):
         try:
             auth_key = request.headers.get('Authorization')
-            authorized = auth_key == apikey
-                
+            authorized = auth_key == apikey         
             
             attachment_info = db.get_attachment_info(aid)
             if attachment_info:

@@ -390,6 +390,20 @@ class DocDepotManager:
                 return f"Error: {response.status_code}, {error_message}"
             except ValueError:
                 return f"Error: {response.status_code}, Response content: {response.text}"
+
+    def download_attachment_aid(self, aid, file_path=None):
+        if not os.path.exists(file_path):
+            url = urljoin(self.api_url + '/', f'/attachment/{aid}')
+            response = requests.get(url, headers=self.headers)
+            if response.status_code == 200:
+                self.success = True
+                with open(file_path, 'wb') as f:
+                    f.write(response.content)
+                return True
+            else:
+                return f"Error downloading attachment: {response.status_code}"
+        else:
+            return "File already exists"
             
     def get_documents(self):
         """
