@@ -59,6 +59,33 @@ if env_vars.cleanup_db_on_start:
 app = Flask(__name__)
 api = Api(app)
 
+class AttachmentDownloadResource(Resource):
+    """
+    Resource to download the requested attachment.
+
+    Parameters:
+    - aid: Attachment ID for accessing the attachment.
+
+    Returns:
+    - File response or redirects to index if attachment not found.
+    """
+    def get(self, aid):
+        try:
+            auth_key = request.headers.get('Authorization')
+            authorized = auth_key == apikey
+                
+            
+            attachment_info = db.get_attachment_info(aid)
+            if attachment_info:
+                file_path = f'{attachmentdir}/{aid}'
+                if not attachment_info.get('allow_attachment', True) and not authorized:
+                    return {"error": "File not found"}, 500
+                return send_file(file_path, as_attachment=False, download_name=attachment_info["name"])
+            else:
+                return {"error": "File not found"}, 500
+        except Exception as e:
+            return {"error": str(e)}, 500
+
 class AttachmentResource(Resource):
     def post(self):
         """
@@ -732,6 +759,7 @@ class AddRedirectsResource(Resource):
         
 
 # Add routes to the API
+api.add_resource(AttachmentDownloadResource, '/attachment/<aid>')
 api.add_resource(AttachmentResource, '/api/add_attachment')
 api.add_resource(DocumentResource, '/api/add_document')
 api.add_resource(GenerateTokenResource, '/api/generate_token')
@@ -807,27 +835,6 @@ def get_documents(token):
                 return render_template('main.html', page_name='document', document_found=True, is_valid=False, html_settings=html_settings)
         else:
             return render_template('main.html', page_name='document', document_found=False, html_settings=html_settings)
-    except Exception as e:
-        return {"error": str(e)}, 500
-    
-@app.route('/attachment/<aid>')
-def get_attachment(aid):
-    """
-    Retrieve and serve the requested attachment.
-
-    Parameters:
-    - aid: Attachment ID for accessing the attachment.
-
-    Returns:
-    - File response or error if attachment not found.
-    """
-    try:
-        attachment_info = db.get_attachment_info(aid)
-        if attachment_info:
-            file_path = f'{attachmentdir}/{aid}'
-            return send_file(file_path, as_attachment=False, download_name=attachment_info["name"])
-        else:
-            return redirect(url_for('render_index', token=token))
     except Exception as e:
         return {"error": str(e)}, 500
 

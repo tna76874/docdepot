@@ -449,14 +449,12 @@ class DatabaseManager:
             if attachment:
                 document = session.query(Document).filter(Document.did == attachment.did).first()
                 if document:
-                    if document.allow_attachment:
-                        return {
-                            'aid': attachment.aid,
-                            'name': attachment.name,
-                            'uploaded': attachment.uploaded
+                    return {
+                        'aid': attachment.aid,
+                        'name': attachment.name,
+                        'uploaded': attachment.uploaded,
+                        'allow_attachment' : document.allow_attachment==True,
                         }
-                    else:
-                        return None
                 else:
                     return None
             else:
