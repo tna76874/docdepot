@@ -160,26 +160,6 @@ class AttachmentResource(Resource):
             else:
                 performed_checks.update_last(passed = True, description="Die Datei wurde vorher noch nicht hochgeladen.")
 
-            # FILE COMPRESSION
-            imaginary = env_vars._get_imaginary(loaded_file)
-            if imaginary:
-                if loaded_file.attributes.get('is_image', False):
-                    compressed_buffer = imaginary.autorotate_and_resize()
-                    if not compressed_buffer:
-                        performed_checks.add_check("Bild-Kompression", passed=False, description="Fehler beim Komprimieren des Bildes. Bitte ein PDF hochladen.")
-                        return performed_checks.get_checks(), 400
-                    
-                    loaded_file.buffer = compressed_buffer
-                    loaded_file.attributes.update({'filename' : imaginary.fullfilename})
-                    
-                elif loaded_file.attributes.get('is_pdf', False):
-                    compressed_buffer = imaginary.compress_pdf()
-                    if not compressed_buffer:
-                        performed_checks.add_check("PDF-Kompression", passed=False, description="Fehler beim Komprimieren des PDFs.")
-                        return performed_checks.get_checks(), 400
-
-                    loaded_file.buffer = compressed_buffer
-
             # AI/QUALITY checks
             if classify:
                 classify_result = classify.classify_image(loaded_file.buffer)
@@ -198,7 +178,26 @@ class AttachmentResource(Resource):
                     
                 performed_checks.add_check("Bildschärfe", passed=True, description="Das Bild ist scharf.")
                 performed_checks.add_check("AI-Check", passed=True, description="Die KI nimmt das Bild an.")
-            
+
+            # FILE COMPRESSION
+            imaginary = env_vars._get_imaginary(loaded_file)
+            if imaginary:
+                if loaded_file.attributes.get('is_image', False):
+                    compressed_buffer = imaginary.autorotate_and_resize()
+                    if not compressed_buffer:
+                        performed_checks.add_check("Bild-Kompression", passed=False, description="Fehler beim Komprimieren des Bildes. Bitte ein PDF hochladen.")
+                        return performed_checks.get_checks(), 400
+                    
+                    loaded_file.buffer = compressed_buffer
+                    loaded_file.attributes.update({'filename' : imaginary.fullfilename})
+                    
+                elif loaded_file.attributes.get('is_pdf', False):
+                    compressed_buffer = imaginary.compress_pdf()
+                    if not compressed_buffer:
+                        performed_checks.add_check("PDF-Kompression", passed=False, description="Fehler beim Komprimieren des PDFs.")
+                        return performed_checks.get_checks(), 400
+
+                    loaded_file.buffer = compressed_buffer            
             
             ## ADDING TO DB
 
