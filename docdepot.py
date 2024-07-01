@@ -160,6 +160,20 @@ class AttachmentResource(Resource):
             else:
                 performed_checks.update_last(passed = True, description="Die Datei wurde vorher noch nicht hochgeladen.")
 
+            # ensure jpeg for image mimetypes
+            imaginary = env_vars._get_imaginary(loaded_file)
+            if imaginary:
+                if loaded_file.attributes.get('is_image', False):
+                    compressed_buffer = imaginary.image_to_jpeg()
+                    if not compressed_buffer:
+                        performed_checks.add_check("Bild-Umwandlung", passed=False, description="Das Umwandeln des Bildes in JPEG ist fehlgeschlagen.")
+                        return performed_checks.get_checks(), 400
+                    
+                    loaded_file.buffer = compressed_buffer
+                    loaded_file.attributes.update({'filename' : imaginary.fullfilename})
+                    performed_checks.add_check("Bild-Umwandlung", passed=True, description="Das Bild wurde in JPEG umgewandelt.")
+
+
             # AI/QUALITY checks
             if classify:
                 classify_result = classify.classify_image(loaded_file.buffer)

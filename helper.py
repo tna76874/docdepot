@@ -144,50 +144,69 @@ class ImageAPI:
     
         except:
             return None
-        
+
+    @none_on_exception
     def _convert(self, image_bytes, height = 1000, quality = 80, pdf=False):
-        try:
-            url = f'{self.base_url}/pipeline'
-            operations = [
-                {
-                    "operation": "resize",
-                    "params": {
-                        "type": self.format,
-                        "quality": quality,
-                        "background": "255,255,255",
-                        "stripmeta": "true",
-                        "height": height,
-                        "force": "true",
-                    }
+        operations = [
+            {
+                "operation": "resize",
+                "params": {
+                    "type": self.format,
+                    "quality": quality,
+                    "background": "255,255,255",
+                    "stripmeta": "true",
+                    "height": height,
+                    "force": "true",
                 }
-            ]
-            if pdf==False:
-                operations = [
-                                {
-                                    "operation": "autorotate",
-                                    "params": {
-                                        "type": self.format,
-                                    }
-                                }
-                             ] + operations
-    
-            files = {'file': (self.fullfilename, image_bytes)}
-            params = {
-                'operations': json.dumps(operations)
             }
-    
-            response = requests.post(url, params=params, files=files)
-            if response.status_code == 200:
-                return response.content
-            else:
-                print(response.text)
-                return None
-        except:
+        ]
+        if pdf==False:
+            operations = [
+                            {
+                                "operation": "autorotate",
+                                "params": {
+                                    "type": self.format,
+                                }
+                            }
+                         ] + operations
+
+        return self._convert_from_operations(image_bytes, operations=operations)
+
+    @none_on_exception
+    def _convert_from_operations(self, image_bytes, operations=[]):
+        url = f'{self.base_url}/pipeline'
+
+        files = {'file': (self.fullfilename, image_bytes)}
+        params = {
+            'operations': json.dumps(operations)
+        }
+
+        response = requests.post(url, params=params, files=files)
+        if response.status_code == 200:
+            return response.content
+        else:
+            print(response.text)
             return None
         
-        
+    @none_on_exception
     def autorotate_and_resize(self):
         return self._convert(self.loaded.buffer, height = self.size)
+    
+    @none_on_exception
+    def image_to_jpeg(self):
+        operations = [
+            {
+                "operation": "convert",
+                "params": {
+                    "type": self.format,
+                    "quality": 100,
+                    "background": "255,255,255",
+                    "stripmeta": "true",
+                    "force": "true",
+                }
+            }
+        ]
+        return self._convert_from_operations(self.loaded.buffer, operations = operations)
 
 class ShortHash:
     def __init__(self, input_string):
