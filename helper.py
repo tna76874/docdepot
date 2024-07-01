@@ -304,9 +304,9 @@ class EnvironmentConfigProvider:
             return ImageAPI(url = self.imaginary_host, loaded=loaded)
         return None
     
-    def _get_gotify(self):
+    def _get_gotify(self, title = 'DocDepot'):
         if self.gotify_host is not None and self.gotify_token is not None:
-            return PushNotify(self.gotify_host, self.gotify_token, title = 'DocDepot', priority = self.gotify_priority)
+            return PushNotify(self.gotify_host, self.gotify_token, title = title, priority = self.gotify_priority)
         return None
     
     def _get_classify(self):
