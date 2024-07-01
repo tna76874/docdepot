@@ -90,14 +90,14 @@ function handleFileUpload() {
                     })
                     .then(response => response.json())
                     .then(data => {
-                        var Description = data[data.length - 1].description;
-                        var PassedStatus = data[data.length - 1].passed;
-
-                        if (PassedStatus === true) {
-                            location.reload();
-                        } else {
-                            alert('Fehler: ' + Description);
+                        var errorItems = data.filter(item => item.passed === false);
+                        
+                        if (errorItems.length > 0) {
+                            var errorDescriptions = errorItems.map(item => item.description).join('\n');
+                            alert('Fehler:\n' + errorDescriptions);
                             openCheckLogOverlay(data);
+                        } else {
+                            location.reload();
                         }
                     })
                     .catch(error => {

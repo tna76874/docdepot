@@ -34,6 +34,12 @@ class CheckHistory:
             if short is not None:
                 last_check["short"] = short
 
+    def _is_passed(self):
+        for check in self.performed_checks:
+            if check["passed"] == False:
+                return False
+        return True
+
 class ImageAPI:
     def __init__(self, url='http://localhost:9000', loaded = None):
         if not loaded:

@@ -178,34 +178,30 @@ class AttachmentResource(Resource):
             if classify:
                 classify_result = classify.classify_image(loaded_file.buffer)
                 if classify_result!=None:
+                    performed_checks.add_check("Helligkeit", passed=True, description="Das Bild ist gut ausgeleuchtet.")
                     if classify_result.get('brightness', False)==False:
-                        performed_checks.add_check("Helligkeit", passed=False, description="Das Bild ist zu dunkel.")
-                        return performed_checks.get_checks(), 400
+                        performed_checks.update_last(passed=False, description="Das Bild ist zu dunkel.")
 
-                    elif classify_result.get('blur', False)==False:
-                        performed_checks.add_check("Bildschärfe")
+                    performed_checks.add_check("Bildschärfe", passed=True, description="Das Bild ist scharf.")
+                    if classify_result.get('blur', False)==False:
                         performed_checks.update_last(passed = False, description="Das Bild ist unscharf.")
-                        return performed_checks.get_checks(), 400
 
-                    elif classify_result.get('ratio', False)==False:
-                        performed_checks.add_check("A4-Check")
-                        performed_checks.update_last(passed = False, description="Es wird ein DIN A4 Seitenverhältnis erwartet. Das Dokument weicht davon zu viel ab.")
-                        return performed_checks.get_checks(), 400
+                    performed_checks.add_check("A4-Check", passed=True, description="Es liegt ein A4 Seitenverhältnis vor.")
+                    if classify_result.get('ratio', False)==False:
+                        performed_checks.update_last(passed = False, description="Es wird ein DIN A4 Seitenverhältnis (hochkant) erwartet. Das Dokument weicht davon zu viel ab.")
 
-                    elif classify_result.get('cnn', False)==False:
-                        performed_checks.add_check("KI-Check")
+                    performed_checks.add_check("KI-Check", passed=True, description="Die KI nimmt das Bild an.")
+                    if classify_result.get('cnn', False)==False:
                         performed_checks.update_last(passed = False, description="Ungenügende Bildqualität. Bitte auf einen deutlichen und gut ausgeleuchteten Scan/Foto achten.")
-                        return performed_checks.get_checks(), 400
 
-                    elif classify_result.get('pass', False)==False:
-                        performed_checks.add_check("Bild-Checks", passed=False, description="Ungültige Datei")
-                        return performed_checks.get_checks(), 400
+                    if classify_result.get('pass', False)==False:
+                        performed_checks.add_check("Bildqualität", passed=False, description="Qualitätsmerkmale nicht eingehalten.")
                     
+                    # return logs with errors if any check did not pass
+                    if not performed_checks._is_passed():
+                        return performed_checks.get_checks(), 400
 
-                performed_checks.add_check("Helligkeit", passed=True, description="Das Bild ist gut ausgeleuchtet.")
-                performed_checks.add_check("Bildschärfe", passed=True, description="Das Bild ist scharf.")
-                performed_checks.add_check("A4-Check", passed=True, description="Es liegt ein A4 Seitenverhältnis vor.")
-                performed_checks.add_check("KI-Check", passed=True, description="Die KI nimmt das Bild an.")
+                
 
             # FILE COMPRESSION
             imaginary = env_vars._get_imaginary(loaded_file)
