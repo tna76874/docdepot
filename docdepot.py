@@ -168,16 +168,26 @@ class AttachmentResource(Resource):
                         performed_checks.add_check("Bildschärfe")
                         performed_checks.update_last(passed = False, description="Das Bild ist unscharf.")
                         return performed_checks.get_checks(), 400
+
+                    elif classify_result.get('ratio', False)==False:
+                        performed_checks.add_check("A4-Check")
+                        performed_checks.update_last(passed = False, description="Es wird ein DIN A4 Seitenverhältnis erwartet. Das Dokument weicht davon zu viel ab.")
+                        return performed_checks.get_checks(), 400
+
                     elif classify_result.get('cnn', False)==False:
-                        performed_checks.add_check("AI-Check")
+                        performed_checks.add_check("KI-Check")
                         performed_checks.update_last(passed = False, description="Ungenügende Bildqualität. Bitte auf einen deutlichen und gut ausgeleuchteten Scan/Foto achten.")
                         return performed_checks.get_checks(), 400
+
                     elif classify_result.get('pass', False)==False:
                         performed_checks.add_check("Bild-Checks", passed=False, description="Ungültige Datei")
                         return performed_checks.get_checks(), 400
                     
+
+                    
                 performed_checks.add_check("Bildschärfe", passed=True, description="Das Bild ist scharf.")
-                performed_checks.add_check("AI-Check", passed=True, description="Die KI nimmt das Bild an.")
+                performed_checks.add_check("KI-Check", passed=True, description="Die KI nimmt das Bild an.")
+                performed_checks.add_check("A4-Check", passed=True, description="Es liegt ein A4 Seitenverhältnis vor.")
 
             # FILE COMPRESSION
             imaginary = env_vars._get_imaginary(loaded_file)
