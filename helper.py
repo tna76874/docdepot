@@ -23,6 +23,12 @@ class CheckHistory:
 
     def get_checks(self):
         return self.performed_checks
+    
+    def _get_checks_string(self):
+        checks_string = ""
+        for check in self.performed_checks:
+            checks_string += f"{check['short']}: {'Passed' if check['passed'] else 'Failed'} - {check['description']}\n"
+        return checks_string
 
     def update_last(self, passed=None, description=None, short=None):
         if self.performed_checks:
