@@ -31,7 +31,7 @@ def main(test_dir, url='http://localhost:5500', api_key='test', threshold=0.55):
                     new_file_path = f'/tmp/classify/{int(prediction*100):02d}_{file}'
                     os.makedirs(os.path.dirname(new_file_path), exist_ok=True)
                     shutil.copy(file_path, new_file_path)
-                    print(f'{file} prediction: {prediction}')
+                    print(f'{file} prediction: {prediction}, result: {result}')
                 else:
                     print(f'Kein Ergebnis für {file}')
             else:
