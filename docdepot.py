@@ -61,6 +61,10 @@ if env_vars.cleanup_db_on_start:
 app = Flask(__name__)
 api = Api(app)
 
+class HealthCheck(Resource):
+    def get(self):
+        return {'status': 'Server is running properly'}, 200
+
 class AttachmentDownloadResource(Resource):
     """
     Resource to download the requested attachment.
@@ -790,6 +794,7 @@ class AddRedirectsResource(Resource):
         
 
 # Add routes to the API
+api.add_resource(HealthCheck, '/health')
 api.add_resource(AttachmentDownloadResource, '/attachment/<aid>')
 api.add_resource(AttachmentResource, '/api/add_attachment')
 api.add_resource(DocumentResource, '/api/add_document')
