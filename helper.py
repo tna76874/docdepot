@@ -30,6 +30,13 @@ class CheckHistory:
             checks_string += f"{check['short']}: {'Passed' if check['passed'] else 'Failed'} - {check['description']}\n"
         return checks_string
 
+    def _get_failed_checks_string(self):
+        failed_checks_string = ""
+        for check in self.performed_checks:
+            if check["passed"] == False:
+                failed_checks_string += f"{check['short']}: Failed\n"
+        return failed_checks_string
+
     def update_last(self, passed=None, description=None, short=None):
         if self.performed_checks:
             last_check = self.performed_checks[-1]

@@ -32,7 +32,7 @@ html_settings = env_vars._get_html_configs()
 
 # init gotify, if set
 gotify = env_vars._get_gotify()
-gotify_error = env_vars._get_gotify(title='DocdepotUploadError')
+gotify_error = env_vars._get_gotify(title='Docdepot Upload-Error')
 
 
 # init classifier
@@ -208,7 +208,7 @@ class AttachmentResource(Resource):
                         try:
                             if gotify_error:
                                 hash_sid = ShortHash(document["user_uid"]).get()
-                                gotify_error.send(f'{document["title"]}\n{hash_sid}\n{request.scheme}://{request.host}/{data.get("token")}\n{performed_checks._get_checks_string()}')
+                                gotify_error.send(f'{document["title"]}\n{hash_sid}\n{request.scheme}://{request.host}/{data.get("token")}\n{performed_checks._get_failed_checks_string()}')
                         except Exception as e:
                             print(e)
                         return performed_checks.get_checks(), 400
