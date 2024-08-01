@@ -5,7 +5,7 @@ documents
 COMMIT_HASH
 unit_*
 docker-compose.yml
-
+data_*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

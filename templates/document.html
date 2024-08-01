@@ -40,7 +40,25 @@
         <ul class="attachment-list">
             {% for attachment in attachment_list %}
                 <li class="attachment-item">
-                    <a href="/attachment/{{ attachment.aid }}" class="download-link">{{ attachment.name }}</a> {{ attachment.uploaded }}<br>
+                    <span class="toggle-icon" id="toggle-info-{{ loop.index }}"><i class="fas fa-chevron-right"></i></i></span>
+
+                    {% if attachment['in_grace_period']|default(True) == True %}
+                    <a href="/attachment/{{ attachment.aid }}" class="download-link">{{ attachment.name }}</a>
+                    {% else %}
+                    {{ attachment.name }} 
+                    {% endif %}
+
+                    <div class="additional-item-info">
+                        <ul>
+                            <li>Hochgeladen am: {{ attachment.uploaded }}</li>
+                            <li>SHA-256 Checksum: {{ attachment.checksum }}</li>
+                            <li>ID: {{ attachment.aid }}</li>
+                        </ul>
+                        {% if attachment['in_grace_period']|default(True) == False %}
+                        Auf dem Server ist nur eine komprimierte Version der Abgabedatei gespeichert. Die Originaldatei mit der angegebenen Checksum muss auf Anfrage vorgelegt werden können.
+                        <a href="https://emn178.github.io/online-tools/sha256_checksum.html" target="_blank">Hier</a> kann die SHA-256 Checksum einer Datei berechnet werden.
+                        {% endif %}
+                    </div>
                 </li>
             {% endfor %}
         </ul>

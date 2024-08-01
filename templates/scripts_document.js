@@ -111,9 +111,25 @@ function handleFileUpload() {
                 }
             });
         }
-    }
+}
+
+function initializeToggleInfo() {
+    document.querySelectorAll('.toggle-icon').forEach(function(icon) {
+        icon.addEventListener('click', function() {
+            const additionalInfo = this.parentElement.querySelector('.additional-item-info');
+            additionalInfo.classList.toggle('show');
+            
+            if (additionalInfo.classList.contains('show')) {
+                this.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            } else {
+                this.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            }
+        });
+    });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
-    adjustFooterSpace()
-    handleFileUpload()
+    adjustFooterSpace();
+    handleFileUpload();
+    initializeToggleInfo();
 });

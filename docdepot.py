@@ -83,7 +83,7 @@ class AttachmentDownloadResource(Resource):
             attachment_info = db.get_attachment_info(aid)
             if attachment_info:
                 file_path = f'{attachmentdir}/{aid}'
-                if not attachment_info.get('allow_attachment', True) and not authorized:
+                if (not attachment_info.get('allow_attachment', True) or (not attachment_info.get('in_grace_period', True))) and not authorized:
                     return {"error": "File not found"}, 500
                 return send_file(file_path, as_attachment=False, download_name=attachment_info["name"])
             else:

@@ -14,6 +14,8 @@ from datetime import datetime, timedelta, timezone
 import os
 from helper import *
 
+env_vars = EnvironmentConfigProvider()
+
 ## timezone settings
 def get_german_timezone():
     berlin = pytz.timezone('Europe/Berlin')
@@ -70,7 +72,7 @@ class Token(Base):
     did = Column(String, ForeignKey('documents.did'))
     token = Column(String, unique=True, default=lambda: str(uuid.uuid4()))
     valid_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=365))
-    allow_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=7))
+    allow_until = Column(DateTime, default=lambda: datetime.now(local_timezone) + timedelta(days=env_vars.get_default_attachment_days()))
     create = Column(DateTime, default=lambda: datetime.now(local_timezone))
     document = relationship('Document', back_populates='tokens')
     events = relationship('Event', back_populates='token', cascade='all, delete-orphan', foreign_keys='[Event.tid]')
@@ -132,6 +134,7 @@ class DatabaseManager:
         self.create_tables()
         self.docdir = docdir
         self.attachmentdir = attachmentdir
+        self.env_vars = EnvironmentConfigProvider()
 
     @contextmanager
     def get_session(self):
@@ -452,8 +455,10 @@ class DatabaseManager:
                     return {
                         'aid': attachment.aid,
                         'name': attachment.name,
+                        'checksum': attachment.checksum,
                         'uploaded': attachment.uploaded,
                         'allow_attachment' : document.allow_attachment==True,
+                        'in_grace_period': datetime.now() <= attachment.uploaded + timedelta(minutes=self.env_vars.get_grace_minutes()),
                         }
                 else:
                     return None

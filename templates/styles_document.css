@@ -177,6 +177,41 @@ footer p {
     color: #ffffff;
 }
 
+.toggle-icon {
+    cursor: pointer;
+    font-size: 20px;
+    transition: transform 0.3s;
+}
+
+.toggle-icon.active {
+    transform: rotate(180deg);
+}
+
+.toggle-icon:hover {
+    background-color: rgba(200, 200, 200, 0.5);
+}
+
+.additional-item-info {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f1f1f1;
+}
+
+.additional-item-info.show {
+    display: block;
+}
+
+.additional-item-info ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    width: auto;
+}
+
 h3 {
     font-size: 1.2em;
     margin-bottom: 10px;

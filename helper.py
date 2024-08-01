@@ -286,6 +286,8 @@ class EnvironmentConfigProvider:
     def __init__(self):
         self.apikey = os.environ.get("DOCDEPOT_API_KEY", "test")
         self.default_redirect = os.environ.get("DOCDEPOT_DEFAULT_REDIRECT", None)
+        self.grace_minutes = os.environ.get("DOCDEPOT_GRACE_MINUTES", 120)
+        self.default_attachment_days = os.environ.get("DOCDEPOT_DAYS_TO_ALLOW_ATTACHMENT", 14)
         self.enable_redirect = os.environ.get("DOCDEPOT_ENABLE_REDIRECT", "False").lower() == "true"
         self.show_info = os.environ.get("DOCDEPOT_SHOW_INFO", "False").lower() == "true"
         self.show_response_time = os.environ.get("DOCDEPOT_SHOW_RESPONSE_TIME", "False").lower() == "true"
@@ -304,6 +306,18 @@ class EnvironmentConfigProvider:
         self.classify_model_threshold = float(self._read_var('DOCDEPOT_MODEL_THRESHOLD') or 0.55)
 
         self.blur_threshold = float(self._read_var('DOCDEPOT_BLUR_THRESHOLD') or 40)
+
+    def get_grace_minutes(self):
+        try:
+            return int(self.grace_minutes)
+        except:
+            return 120
+    
+    def get_default_attachment_days(self):
+        try:
+            return int(self.default_attachment_days)
+        except:
+            return 14
         
     def _read_var(self, var_name):
         value = os.environ.get(var_name)
