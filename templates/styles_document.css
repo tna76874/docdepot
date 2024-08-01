@@ -202,6 +202,10 @@ footer p {
 
 .additional-item-info.show {
     display: block;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .additional-item-info ul {
@@ -210,6 +214,24 @@ footer p {
     margin: 0;
     text-align: left;
     width: auto;
+}
+
+.additional-item-info li {
+    display: flex;
+    justify-content: flex-start;
+    padding: 5px 0;
+}
+
+.key {
+    font-weight: bold;
+    color: #333;
+    width: 200px;
+}
+
+.value {
+    display: inline-block;
+    max-width: calc(100% - 160px);
+    word-wrap: break-word;
 }
 
 h3 {

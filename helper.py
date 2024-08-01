@@ -286,7 +286,7 @@ class EnvironmentConfigProvider:
     def __init__(self):
         self.apikey = os.environ.get("DOCDEPOT_API_KEY", "test")
         self.default_redirect = os.environ.get("DOCDEPOT_DEFAULT_REDIRECT", None)
-        self.grace_minutes = os.environ.get("DOCDEPOT_GRACE_MINUTES", 120)
+        self.grace_minutes = os.environ.get("DOCDEPOT_GRACE_MINUTES", 15)
         self.default_attachment_days = os.environ.get("DOCDEPOT_DAYS_TO_ALLOW_ATTACHMENT", 14)
         self.enable_redirect = os.environ.get("DOCDEPOT_ENABLE_REDIRECT", "False").lower() == "true"
         self.show_info = os.environ.get("DOCDEPOT_SHOW_INFO", "False").lower() == "true"
