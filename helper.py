@@ -395,7 +395,7 @@ class TimedeltaFormatter:
 
         parts = []
         if days > 0:
-            parts.append(f"{days} Tag{'e' if days > 1 else ''}")
+            parts.append(f"{days} Tag{'en' if days > 1 else ''}")
         if hours > 0 or days > 0:
             parts.append(f"{hours} Stunde{'n' if hours != 1 else ''}")
         if minutes > 0 or hours > 0 or days > 0:
