@@ -12,6 +12,7 @@ import json
 
 from cryptography.fernet import Fernet
 from datetime import datetime, timedelta
+import urllib
 
 import PyPDF2
 from reportlab.pdfgen import canvas
@@ -292,6 +293,7 @@ class CryptCheckSum:
             raise ValueError("Missing key")
         
         self.fernet = Fernet(self.key.encode('utf-8'))
+        self.urlsafe = kwargs.get('urlsafe', True)
         
 
     def encrypt(self, **kwargs):
@@ -312,13 +314,19 @@ class CryptCheckSum:
         json_data = json.dumps(data)
 
         # Verschlüsseln des JSON-Strings
-        encrypted_data = self.fernet.encrypt(json_data.encode())
+        encrypted_data = self.fernet.encrypt(json_data.encode()).decode('utf-8')
 
-        return encrypted_data.decode('utf-8')
+        if self.urlsafe:
+            encrypted_data = urllib.parse.quote_plus(encrypted_data)
+
+        return encrypted_data
 
     def decrypt(self, encrypted_string):
         try:
             """Entschlüsselt den gegebenen String und gibt ein Dictionary zurück."""
+            if self.urlsafe:
+                encrypted_string = urllib.parse.unquote(encrypted_string)
+
             encrypted_data = encrypted_string.encode('utf-8')
     
             decrypted_data = self.fernet.decrypt(encrypted_data)

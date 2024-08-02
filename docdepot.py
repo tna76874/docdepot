@@ -885,7 +885,7 @@ def view_attachment(aid):
     try:
         attachment_info = db.get_attachment_info(aid)
         if attachment_info:
-            crypt = CryptCheckSum(key=env_vars.fernet_key)
+            crypt = CryptCheckSum(key=env_vars.fernet_key, urlsafe=True)
             key = crypt.encrypt(**attachment_info)
             for i in ['uploaded', 'doc_upload_time']:
                 attachment_info[i] = attachment_info[i].strftime('%d.%m.%Y %H:%M Uhr')
@@ -899,6 +899,23 @@ def view_attachment(aid):
                                    )
         else:
             return render_template('main.html', page_name='document', document_found=False, html_settings=html_settings)
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+@app.route('/validate/<token>')
+def validate_submission(token):
+    """
+    validate submission
+    """
+    try:
+        crypt = CryptCheckSum(key=env_vars.fernet_key, urlsafe=True)
+        decrypted = crypt.decrypt(token)
+        if decrypted!=None:
+            attachment_info = db.get_attachment_info(decrypted.get('aid'))
+            if attachment_info:
+                return redirect(url_for('view_attachment', aid=decrypted.get('aid')))
+            return {"error": "Anhang nicht gefunden"}, 500
+        return {"error": "Anhang nicht gefunden"}, 500
     except Exception as e:
         return {"error": str(e)}, 500
 

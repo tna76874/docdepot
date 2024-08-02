@@ -12,3 +12,4 @@ python-magic==0.4.27
 reportlab==4.2.0
 SQLAlchemy==2.0.25
 cryptography==41.0.7
+urllib3==1.26.18
