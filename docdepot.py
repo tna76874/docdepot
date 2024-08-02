@@ -877,6 +877,31 @@ def get_documents(token):
     except Exception as e:
         return {"error": str(e)}, 500
 
+@app.route('/submission/<aid>')
+def view_attachment(aid):
+    """
+    View attachment info
+    """
+    try:
+        attachment_info = db.get_attachment_info(aid)
+        if attachment_info:
+            crypt = CryptCheckSum(key=env_vars.fernet_key)
+            key = crypt.encrypt(**attachment_info)
+            for i in ['uploaded', 'doc_upload_time']:
+                attachment_info[i] = attachment_info[i].strftime('%d.%m.%Y %H:%M Uhr')
+            attachment_info['delta_upload'] = TimedeltaFormatter(attachment_info['delta_upload']).format()
+
+            return render_template('main.html',
+                                   page_name='attachment',
+                                   html_settings=html_settings,
+                                   attachment = attachment_info,
+                                   key = key,
+                                   )
+        else:
+            return render_template('main.html', page_name='document', document_found=False, html_settings=html_settings)
+    except Exception as e:
+        return {"error": str(e)}, 500
+
 @app.route('/<token>')
 def render_index(token):
     """

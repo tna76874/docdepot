@@ -10,6 +10,9 @@ from PIL import Image
 from classify import *
 import json
 
+from cryptography.fernet import Fernet
+from datetime import datetime, timedelta
+
 import PyPDF2
 from reportlab.pdfgen import canvas
 import io
@@ -281,12 +284,128 @@ class PushNotify:
         payload['message'] = message
         response = requests.post(url, json=payload)
         return response.status_code == 200
+    
+class CryptCheckSum:
+    def __init__(self, **kwargs):
+        self.key = kwargs.get('key')
+        if self.key is None:
+            raise ValueError("Missing key")
+        
+        self.fernet = Fernet(self.key.encode('utf-8'))
+        
+
+    def encrypt(self, **kwargs):
+        """Verschlüsselt die übergebenen Argumente in einem JSON-Format."""
+        # Erstelle ein Dictionary mit den Werten
+
+        data = {
+            'checksum': kwargs.get('checksum'),
+            'aid': kwargs.get('aid'),
+            'user_id': kwargs.get('user_id'),
+            'uploaded': self._parse_time(kwargs.get('uploaded')).isoformat() if kwargs.get('uploaded') else None,
+            'doc_upload_time': self._parse_time(kwargs.get('doc_upload_time')).isoformat() if kwargs.get('doc_upload_time') else None,
+            'did': kwargs.get('did'),
+            'now' : datetime.now().isoformat(),
+        }
+
+        # Konvertiere das Dictionary in einen JSON-String
+        json_data = json.dumps(data)
+
+        # Verschlüsseln des JSON-Strings
+        encrypted_data = self.fernet.encrypt(json_data.encode())
+
+        return encrypted_data.decode('utf-8')
+
+    def decrypt(self, encrypted_string):
+        try:
+            """Entschlüsselt den gegebenen String und gibt ein Dictionary zurück."""
+            encrypted_data = encrypted_string.encode('utf-8')
+    
+            decrypted_data = self.fernet.decrypt(encrypted_data)
+    
+            json_data = decrypted_data.decode('utf-8')
+    
+            data = json.loads(json_data)
+    
+            if 'upload_time' in data and data['upload_time'] is not None:
+                data['upload_time'] = datetime.fromisoformat(data['upload_time'])
+            if 'did_upload_time' in data and data['did_upload_time'] is not None:
+                data['did_upload_time'] = datetime.fromisoformat(data['did_upload_time'])
+    
+            return data
+        except:
+            return None
+
+    @staticmethod
+    def _validate_fernet_key(key):
+        """Überprüft, ob der gegebene Fernet-Schlüssel gültig ist."""
+        try:
+            fernet = Fernet(key)
+            test_data = b'test'
+            encrypted_data = fernet.encrypt(test_data)
+            fernet.decrypt(encrypted_data)
+            return True
+        except:
+            return False
+
+    @staticmethod
+    def generate_key():
+        """Generiert einen neuen Fernet-Key."""
+        return Fernet.generate_key().decode('utf-8')
+
+    @staticmethod
+    def _parse_time(upload_time):
+        """Parst die upload_time und gibt ein datetime-Objekt zurück."""
+        if isinstance(upload_time, datetime):
+            return upload_time
+        
+        if isinstance(upload_time, str):
+            formats = [
+                "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%d",
+                "%d.%m.%Y",
+            ]
+            for fmt in formats:
+                try:
+                    return datetime.strptime(upload_time, fmt)
+                except ValueError:
+                    continue
+        
+        raise ValueError("upload_time muss ein datetime-Objekt oder ein gültiger Zeitstring sein.")
+
+class TimedeltaFormatter:
+    def __init__(self, td):
+        if not isinstance(td, timedelta):
+            raise ValueError("Das Argument muss ein timedelta-Objekt sein.")
+        self.td = td
+
+    def format(self):
+        total_seconds = int(self.td.total_seconds())
+        days = total_seconds // 86400
+        hours = (total_seconds % 86400) // 3600
+        minutes = (total_seconds % 3600) // 60
+
+        parts = []
+        if days > 0:
+            parts.append(f"{days} Tag{'e' if days > 1 else ''}")
+        if hours > 0 or days > 0:
+            parts.append(f"{hours} Stunde{'n' if hours != 1 else ''}")
+        if minutes > 0 or hours > 0 or days > 0:
+            parts.append(f"{minutes} Minute{'n' if minutes != 1 else ''}")
+
+        return ', '.join(parts) if parts else '0 Minuten'
 
 class EnvironmentConfigProvider:
     def __init__(self):
         self.apikey = os.environ.get("DOCDEPOT_API_KEY", "test")
         self.default_redirect = os.environ.get("DOCDEPOT_DEFAULT_REDIRECT", None)
-        self.grace_minutes = os.environ.get("DOCDEPOT_GRACE_MINUTES", 15)
+        self.grace_minutes = os.environ.get("DOCDEPOT_GRACE_MINUTES", 0)
+        self.fernet_key = os.environ.get("DOCDEPOT_FERNET_KEY")
+        
+        if CryptCheckSum._validate_fernet_key(self.fernet_key)==False:
+            raise ValueError("Invalid Fernet key")
+        
+        
         self.default_attachment_days = os.environ.get("DOCDEPOT_DAYS_TO_ALLOW_ATTACHMENT", 14)
         self.enable_redirect = os.environ.get("DOCDEPOT_ENABLE_REDIRECT", "False").lower() == "true"
         self.show_info = os.environ.get("DOCDEPOT_SHOW_INFO", "False").lower() == "true"
@@ -311,7 +430,7 @@ class EnvironmentConfigProvider:
         try:
             return int(self.grace_minutes)
         except:
-            return 120
+            return 0
     
     def get_default_attachment_days(self):
         try:
