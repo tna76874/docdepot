@@ -305,6 +305,7 @@ class CryptCheckSum:
             'aid': kwargs.get('aid'),
             'user_id': kwargs.get('user_id'),
             'uploaded': self._parse_time(kwargs.get('uploaded')).isoformat() if kwargs.get('uploaded') else None,
+            'doc_title': kwargs.get('doc_title'),
             'doc_upload_time': self._parse_time(kwargs.get('doc_upload_time')).isoformat() if kwargs.get('doc_upload_time') else None,
             'did': kwargs.get('did'),
             'now' : datetime.now().isoformat(),
@@ -335,10 +336,10 @@ class CryptCheckSum:
     
             data = json.loads(json_data)
     
-            if 'upload_time' in data and data['upload_time'] is not None:
-                data['upload_time'] = datetime.fromisoformat(data['upload_time'])
-            if 'did_upload_time' in data and data['did_upload_time'] is not None:
-                data['did_upload_time'] = datetime.fromisoformat(data['did_upload_time'])
+            if 'uploaded' in data and data['uploaded'] is not None:
+                data['uploaded'] =  self._parse_time(data['uploaded'])
+            if 'doc_upload_time' in data and data['doc_upload_time'] is not None:
+                data['doc_upload_time'] = self._parse_time(data['doc_upload_time'])
     
             return data
         except:
@@ -368,6 +369,11 @@ class CryptCheckSum:
             return upload_time
         
         if isinstance(upload_time, str):
+            try:
+                return datetime.fromisoformat(upload_time)
+            except ValueError:
+                pass
+            
             formats = [
                 "%Y-%m-%d %H:%M:%S",
                 "%Y-%m-%d",

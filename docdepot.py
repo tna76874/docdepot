@@ -896,6 +896,7 @@ def view_attachment(aid):
                                    html_settings=html_settings,
                                    attachment = attachment_info,
                                    key = key,
+                                   validation=False,
                                    )
         else:
             return render_template('main.html', page_name='document', document_found=False, html_settings=html_settings)
@@ -911,11 +912,16 @@ def validate_submission(token):
         crypt = CryptCheckSum(key=env_vars.fernet_key, urlsafe=True)
         decrypted = crypt.decrypt(token)
         if decrypted!=None:
-            attachment_info = db.get_attachment_info(decrypted.get('aid'))
-            if attachment_info:
-                return redirect(url_for('view_attachment', aid=decrypted.get('aid')))
+            decrypted['uploaded'] = decrypted['uploaded'].strftime('%d.%m.%Y %H:%M Uhr')
+            decrypted['doc_upload_time'] = decrypted['doc_upload_time'].strftime('%d.%m.%Y %H:%M Uhr')
+            return render_template('main.html',
+                                   page_name='attachment',
+                                   html_settings=html_settings,
+                                   decrypted = decrypted,
+                                   validation=True,
+                                   )
             return {"error": "Anhang nicht gefunden"}, 500
-        return {"error": "Anhang nicht gefunden"}, 500
+        return {"error": "Validierungscode ungültig"}, 500
     except Exception as e:
         return {"error": str(e)}, 500
 

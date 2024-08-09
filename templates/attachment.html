@@ -1,3 +1,5 @@
+{% if validation|default(False) == False %}
+
 <h2>
 {% if attachment['in_grace_period']|default(True) == True %}
 <a href="/attachment/{{ attachment.aid }}" class="download-link">{{ attachment.name }}</a>
@@ -27,6 +29,26 @@
     <canvas id="qr"></canvas>
 
 </div>
+
+{% else %}
+<h2>
+    <span class="icon" style="color: green;"><i class="fas fa-check"></i></span> Validierung
+</h2>
+
+<div class="additional-item-info">
+    <p>
+        Die folgenden Informationen wurden erfolgreich validiert.
+    </p>
+    
+    <ul>
+        <li><span class="key">Hochgeladen am:</span> <span class="value">{{ decrypted.uploaded }}</span></li>
+        <li><span class="key">Anhang von:</span> <span class="value">"{{ decrypted.doc_title }}" vom {{ decrypted.doc_upload_time }} </span></li>
+        <li><span class="key">SHA-256 Prüfsumme:</span> <span class="value">{{ decrypted.checksum }}</span></li>
+        <li><span class="key">Dokument ID:</span> <span class="value">{{ decrypted.aid }}</span></li>
+        <li><span class="key">Nutzer ID:</span> <span class="value">{{ decrypted.user_id }}</span></li>
+    </ul>
+</div>
+{% endif %}
 
 <script>
     {% include 'scripts_attachment.js' %}
