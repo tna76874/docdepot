@@ -1013,7 +1013,11 @@ def render_summary(summarytoken):
     
 @app.route('/')
 def the_disclaimer():
-    return render_template('thedisclaimer.html')
+    current_time = datetime.now().strftime("%H:%M")
+    if current_time == "11:11":
+        return render_template('thedisclaimer.html')
+    else:
+        return ""
 
 @app.errorhandler(Exception)
 def handle_error(error):
