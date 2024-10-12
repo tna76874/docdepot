@@ -9,6 +9,7 @@ COPY helper.py /app/helper.py
 COPY classify.py /app/classify.py
 COPY docdepotdb.py /app/docdepotdb.py
 COPY templates /app/templates
+COPY static /app/static
 COPY ddclient /app/ddclient
 RUN chmod -R +x /app
 

@@ -1012,14 +1012,8 @@ def render_summary(summarytoken):
 
     
 @app.route('/')
-def empty_page():
-    """
-    Return an empty page.
-
-    Returns:
-    - Empty HTML page.
-    """
-    return ''
+def the_disclaimer():
+    return render_template('thedisclaimer.html')
 
 @app.errorhandler(Exception)
 def handle_error(error):
