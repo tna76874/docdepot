@@ -460,7 +460,7 @@ class DatabaseManager:
                         'doc_upload_time': document.upload_datetime,
                         'delta_upload' : attachment.uploaded - document.upload_datetime,
                         'allow_attachment' : document.allow_attachment==True,
-                        'in_grace_period': datetime.now() <= attachment.uploaded + timedelta(minutes=self.env_vars.get_grace_minutes()),
+                        'in_grace_period': datetime.now(local_timezone).replace(tzinfo=None) <= attachment.uploaded + timedelta(minutes=self.env_vars.get_grace_minutes()),
                         'doc_title': document.title,
                         'did': document.did,
                         'user_id': document.user_uid,
