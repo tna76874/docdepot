@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Crect width='24' height='24' fill='none'/%3E%3Cpath d='M12 16l-4-4h3V4h2v8h3l-4 4z'/%3E%3C/svg%3E" type="image/svg+xml">
 
     <style>{% include 'styles.css' %}</style>
 
     {% if page_name|default('document') == 'document' %}
-    <title>Dokument Download</title>
+    <title>Dokument</title>
     <style>{% include 'styles_document.css' %}</style>
     {% elif page_name|default('document') == 'summary' %}
     <title>Übersicht Dokumente</title>

@@ -4,7 +4,7 @@
 Depose Files: A simple file deposition API using Flask.
 """
 
-from flask import Flask, jsonify, send_file, render_template, request, url_for, redirect
+from flask import Flask, jsonify, send_file, render_template, request, url_for, redirect, send_from_directory
 from flask_restful import Api, Resource
 import os
 from docdepotdb import *
@@ -1010,7 +1010,12 @@ def render_summary(summarytoken):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory('static/favicon', 'favicon.ico')
+
+
 @app.route('/')
 def the_disclaimer():
     current_time = datetime.now().strftime("%H:%M")
