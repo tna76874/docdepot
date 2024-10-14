@@ -198,7 +198,7 @@ class AttachmentResource(Resource):
 
                     performed_checks.add_check("KI-Check", passed=True, description="Die KI nimmt das Bild an.")
                     if classify_result.get('cnn', False)==False:
-                        performed_checks.update_last(passed = False, description="Ungenügende Bildqualität. Bitte auf einen deutlichen und gut ausgeleuchteten Scan/Foto achten.")
+                        performed_checks.update_last(passed = False, description="Ungenügende Bildqualität. Bitte auf einen randlosen, deutlichen und gut ausgeleuchteten Scan/Foto achten.")
 
                     if classify_result.get('pass', False)==False:
                         performed_checks.add_check("Bildqualität", passed=False, description="Qualitätsmerkmale nicht eingehalten.")
