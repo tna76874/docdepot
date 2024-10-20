@@ -106,10 +106,12 @@ class AttachmentResource(Resource):
         try:
             data = request.form
             file = request.files.get('file')
-            
+                        
             performed_checks = CheckHistory()
             
-            document = db.get_document_from_token(data.get('token'))
+            document_token = data.get('token')
+            
+            document = db.get_document_from_token(document_token)
             if not document:
                 performed_checks.add_check("Dokument")
                 performed_checks.update_last(passed = False, description="Dokument nicht gefunden")
@@ -137,6 +139,9 @@ class AttachmentResource(Resource):
                 performed_checks.add_check("Dateiname")
                 erformed_checks.update_last(passed = False, description="Kein Dateiname enthalten")
                 return performed_checks.get_checks(), 400
+            
+            # log the click of the upload button
+            db.add_event(document_token, event = 'upload_attempt')
 
             # load file
             loaded_file = FileLoader(file, filename=file.filename).load()
@@ -268,6 +273,8 @@ class AttachmentResource(Resource):
                 return response, 500
             
         except Exception as e:
+            if gotify_error:
+                gotify_error.send(f'Exception on Attachment-Upload')
             response = {
                 "error": str(e),
                 "status": "error"
