@@ -104,12 +104,15 @@ class AttachmentResource(Resource):
         - aid: Attachment ID.
         """
         try:
-            data = request.form
-            file = request.files.get('file')
-                        
             performed_checks = CheckHistory()
-            
-            document_token = data.get('token')
+
+            try:
+                data = request.form
+                file = request.files.get('file')
+                document_token = data.get('token')
+            except:
+                performed_checks.add_check("Upload", passed = False, description="Fehler beim Hochladen! Bitte auf eine stabile Internetverbindung achten und die Datei aus der Mediathek auswählen (kein direktes Foto).")
+                return performed_checks.get_checks(), 400
             
             document = db.get_document_from_token(document_token)
             if not document:
