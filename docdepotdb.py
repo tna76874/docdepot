@@ -966,6 +966,23 @@ class DatabaseManager:
             print(f"Error deleting user: {e}")
         finally:
             session.close()
+
+    def set_attachment_deadline_for_token(self, token=None, new_allow_until=None):
+        """
+        Set the allow_until for a specific token in the database to a specified datetime.
+    
+        Parameters:
+        - token_id: ID of the token to update.
+        - new_allow_until: datetime object representing the new allow_until datetime.
+        """
+        new_allow_until = self._ensure_datetime(new_allow_until)
+    
+        with self.get_session() as session:
+            token = session.query(Token).filter(Token.token == token).first()
+    
+            if token is not None:
+                token.allow_until = new_allow_until
+                session.commit()
             
     def set_all_attachment_deadlines(self, new_allow_until):
         """

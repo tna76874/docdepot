@@ -498,6 +498,30 @@ class DocDepotManager:
             except ValueError:
                 return f"Error: {response.status_code}, Response content: {response.text}"
             
+    def set_attachment_expiry_date(self, token=None, valid_until=None):
+        """
+        Set the 'valid_until' date for a specific attachment identified by the token.
+    
+        Parameters:
+        - token: The identifier for the attachment.
+        - valid_until: New 'valid_until' date for the attachment.
+    
+        Returns:
+        - message: A success or error message.
+        """
+        
+        url = urljoin(self.api_url + '/', 'set_one_attachment_expiry_date')
+        data = {'token': token, 'expires': valid_until}
+        response = requests.put(url, headers=self.headers, json=data)
+    
+        if response.status_code == 200:
+            return {"message": f"Attachment with token '{token}' expiry date set to {valid_until} successfully."}
+        else:
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
 
     def set_all_attachments_expiry_date(self, valid_until):
         """
