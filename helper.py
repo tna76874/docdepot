@@ -428,6 +428,9 @@ class EnvironmentConfigProvider:
         self.github_repo = os.environ.get("DOCDEPOT_GITHUB_REPO", "https://github.com/tna76874/docdepot")
         self.cleanup_db_on_start = os.environ.get("DOCDEPOT_CLEANUP_ON_START", "True").lower() == "true"
         
+        self.document_policy_url = os.environ.get("DOCDEPOT_DOCUMENT_POLICY_URL", False)
+
+        
         self.gotify_host = self._read_var('GOTIFY_HOST')
         self.gotify_token = self._read_var('GOTIFY_TOKEN')
         self.gotify_priority = int(self._read_var('GOTIFY_PRIORITY') or 8)
@@ -490,6 +493,7 @@ class EnvironmentConfigProvider:
             "show_timestamp": self.show_timestamp,
             "github_repo": self.github_repo,
             "enable_redirect" : self.enable_redirect,
+            "document_policy_url" : self.document_policy_url,
         }
         return html_configs
 

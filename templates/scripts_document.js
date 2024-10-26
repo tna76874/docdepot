@@ -128,8 +128,36 @@ function initializeToggleInfo() {
     });
 }
 
+const uploadLabel = document.getElementById('uploadLabel'); 
+const uploadButton = document.getElementById('uploadButton');
+
+function disable_upload_button() {
+    if (!uploadLabel.classList.contains('disabled')) {
+        uploadLabel.classList.add('disabled');
+    }
+}
+
+function enable_upload_button() {
+    while (uploadLabel.classList.contains('disabled')) {
+        uploadLabel.classList.remove('disabled');
+    }
+}
+
+const consentCheckbox = document.getElementById('consentCheckbox');
+function toggleUploadButton() {
+    if (consentCheckbox.checked) {
+        enable_upload_button();
+    } else {
+        disable_upload_button();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     adjustFooterSpace();
     handleFileUpload();
     initializeToggleInfo();
+    {% if html_settings["document_policy_url"]|default(False) != False %}
+    disable_upload_button()
+    {% endif %}
+    consentCheckbox.addEventListener('change', toggleUploadButton);
 });

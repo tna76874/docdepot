@@ -31,9 +31,15 @@
     <p style="font-style: italic; font-size: smaller;">
         Abgabe möglich bis {{ attachment_info['allow_until']|default('--') }}
     </p>
+    {% if html_settings["document_policy_url"]|default(False) != False %}   
+    <div>
+        <input type="checkbox" id="consentCheckbox">
+        <label for="consentCheckbox">Ja, ich beachte die <a href="{{ html_settings['document_policy_url'] }}" target="_blank" class="consent-box">Dokumentenrichtlinien</a>.</label>
+    </div>
+    {% endif %}
     <div class="upload-section">
         <input type="file" id="fileInput" name="file">
-        <label for="fileInput" id="uploadLabel">Verbesserung hochladen</label>
+        <label for="fileInput" id="uploadLabel">Verbesserung abgeben</label>
     </div>
     {% endif %}
     {% if attachment_list|default([])!=[] %}

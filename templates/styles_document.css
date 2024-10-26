@@ -5,7 +5,7 @@ h1 {
     margin: 0;
 }
 
-a:not(.footer-link) {
+a:not(.footer-link):not(.consent-box) {
     display: inline-block;
     padding: 10px 20px;
     margin: 10px;
@@ -16,7 +16,7 @@ a:not(.footer-link) {
     transition: background-color 0.3s ease;
 }
 
-a:not(.footer-link):hover {
+a:not(.footer-link):not(.consent-box):hover {
     background-color: #2079b0;
 }
 
@@ -259,6 +259,15 @@ margin-left: 10px;
     opacity: 0.5;
     pointer-events: none;
     cursor: not-allowed;
+}
+
+.consent-box p a {
+    color: #007bff;
+    text-decoration: underline;
+}
+
+.consent-box p a:hover {
+    text-decoration: none;
 }
 
 .spinner-overlay {
