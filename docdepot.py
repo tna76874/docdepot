@@ -728,8 +728,13 @@ class SetOneAttachmentExpiryDateResource(Resource):
             if not valid_until or not token:
                 return {"error": "missing expiry date or token"}, 400
 
-
-            db.set_attachment_deadline_for_token(token=token, new_allow_until=valid_until)
+            if isinstance(token, list):
+                token_list = token
+            else:
+                token_list = [token]
+            
+            for update_token in token:
+                db.set_attachment_deadline_for_token(token=update_token, new_allow_until=valid_until)
 
             return {"message": f"successfully set deadline for token."}, 200
         except Exception as e:
