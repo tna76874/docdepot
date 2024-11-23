@@ -379,6 +379,30 @@ class GenerateTokenResource(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
+class GetTokenDeadlines(Resource):
+    def get(self):
+        """
+        Endpoint for retrieving deadlines for all tokens.
+
+        Returns:
+        {
+            "deadlines": {
+                "token_id_1": "allow_until_value_1",
+                "token_id_2": null,
+                ...
+            }
+        }
+        """
+        try:
+            auth_key = request.headers.get('Authorization')
+            if auth_key != apikey:
+                return jsonify({"error": "Unauthorized"}), 401
+            
+            deadlines = json_serialize(db.get_token_deadlines())
+            return {"deadlines": deadlines}, 200
+        except Exception as e:
+            return {"error": str(e)}, 500
+
 class DeleteTokenResource(Resource):
     def delete(self):
         """
@@ -848,6 +872,7 @@ api.add_resource(AttachmentDownloadResource, '/attachment/<aid>')
 api.add_resource(AttachmentResource, '/api/add_attachment')
 api.add_resource(DocumentResource, '/api/add_document')
 api.add_resource(GenerateTokenResource, '/api/generate_token')
+api.add_resource(GetTokenDeadlines, '/api/get_token_deadlines')
 api.add_resource(DeleteTokenResource, '/api/delete_token')
 api.add_resource(DeleteUserResource, '/api/delete_user')
 api.add_resource(UpdateTokenValidUntilResource, '/api/update_token_valid_until')

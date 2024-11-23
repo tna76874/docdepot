@@ -32,6 +32,28 @@ class DocDepotManager:
         if server_ddclient_version != local_ddclient_version:
             raise ValueError(f"DDClient version ({local_ddclient_version}) does not match server version ({server_ddclient_version}).")
 
+    def get_token_deadlines(self):
+        """
+        Retrieve deadlines for all tokens.
+
+        Returns:
+        - deadlines: Dictionary with token IDs as keys and allow_until values or None.
+        """
+        url = urljoin(self.api_url + '/', 'get_token_deadlines')
+        response = requests.get(url, headers=self.headers)
+
+        if response.status_code == 200:
+            self.success = True
+            deadlines = response.json().get('deadlines', {})
+            return deadlines
+        else:
+            self.success = False
+            try:
+                error_message = response.json()
+                return f"Error: {response.status_code}, {error_message}"
+            except ValueError:
+                return f"Error: {response.status_code}, Response content: {response.text}"
+
     def check_token_validity(self, token_list):
         """
         Check the validity of a list of tokens.

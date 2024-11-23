@@ -215,6 +215,30 @@ class DatabaseManager:
                             for event in events_with_nan:
                                 event.event = 'download'
                             self.session.commit()
+
+    @none_on_exception
+    def get_token_deadlines(self):
+        """
+        Retrieves the allow_until attribute for all tokens, returning None if the associated document does not allow attachments.
+
+        :return: A dictionary with token IDs as keys and allow_until values or None.
+        """
+        with self.get_session() as session:
+            # Get all tokens from the database
+            tokens = session.query(Token).all()
+
+            deadlines = {}
+            for token in tokens:
+                # Get the associated document
+                document = token.document
+
+                # Check if the document allows attachments
+                if document.allow_attachment:
+                    deadlines[token.token] = token.allow_until
+                else:
+                    deadlines[token.token] = None  # Document does not allow attachments
+
+            return deadlines
                             
     @none_on_exception
     def get_token_details(self, token_value, isofomat=False):
