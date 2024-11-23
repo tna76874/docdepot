@@ -18,6 +18,22 @@ import PyPDF2
 from reportlab.pdfgen import canvas
 import io
 
+def json_serialize(data):
+    """
+    Recursively convert a data structure to a JSON-compatible format.
+
+    :param data: The data structure (dict, list, etc.) to convert.
+    :return: The JSON-compatible data structure.
+    """
+    if isinstance(data, dict):
+        return {key: json_serialize(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [json_serialize(item) for item in data]
+    elif isinstance(data, datetime):
+        return data.isoformat()  # Convert datetime to ISO format
+    else:
+        return data  # Return the data as is if it's already JSON-compatible
+
 class CheckHistory:
     def __init__(self):
         self.performed_checks = []

@@ -342,8 +342,9 @@ class DocumentResource(Resource):
 
             # Add token for the document
             token = db.add_token(did)
+            details = db.get_token_details(token, isoformat=True)
 
-            return {"token": token, "did": did}, 201
+            return {"token": token, "did": did, "details": details}, 201
         except Exception as e:
             return {"error": str(e)}, 500
 
@@ -372,8 +373,9 @@ class GenerateTokenResource(Resource):
 
             # Generate a new token for the document
             token = db.add_token(did)
+            details = db.get_token_details(token, isoformat=True)
 
-            return {"token": token}, 201
+            return {"token": token, "details": details}, 201
         except Exception as e:
             return {"error": str(e)}, 500
 

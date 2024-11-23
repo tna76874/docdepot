@@ -215,6 +215,53 @@ class DatabaseManager:
                             for event in events_with_nan:
                                 event.event = 'download'
                             self.session.commit()
+                            
+    @none_on_exception
+    def get_token_details(self, token_value, isofomat=False):
+        """
+        Retrieves details for a given token, including the associated document and user.
+
+        :param token_value: The token value for which to retrieve details.
+        :return: A dictionary containing token, document, and user details.
+        """
+        with self.get_session() as session:
+            # Find the token in the database
+            token = session.query(Token).filter_by(token=token_value).first()
+
+            if token:
+                # Get the associated document and user
+                document = token.document
+                user = document.user  # Assuming user is always present
+
+                # Prepare the details dictionary
+                details = {
+                    'token': {
+                        'tid': token.tid,
+                        'token': token.token,
+                        'valid_until': token.valid_until,
+                        'allow_until': token.allow_until,
+                        'create': token.create,
+                    },
+                    'document': {
+                        'did': document.did,
+                        'title': document.title,
+                        'filename': document.filename,
+                        'checksum': document.checksum,
+                        'valid_until': document.valid_until,
+                        'upload_datetime': document.upload_datetime,
+                        'allow_attachment': document.allow_attachment,
+                    },
+                    'user': {
+                        'uid': user.uid,
+                        'valid_until': user.valid_until,
+                    }
+                }
+                if isoformat==True:
+                    return json_serialize(details)
+                
+                return details
+            else:
+                return None  # Token not found
 
     @none_on_exception                            
     def _add_summary_click_event(self, sumtoken):

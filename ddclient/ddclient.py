@@ -11,13 +11,10 @@ import argparse
 import os
 import hashlib
 
-
-
 try:
     from ddclient import __version__
 except:
     from __init__ import __version__
-
 
 class DocDepotManager:
     def __init__(self, api_key, host='http://localhost:5000'):
