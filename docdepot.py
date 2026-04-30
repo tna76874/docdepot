@@ -13,6 +13,7 @@ from datetime import datetime
 import json
 from functools import wraps
 import hashlib
+import secrets
 from helper import *
 
 # Define directories and create them if they don't exist
@@ -301,7 +302,7 @@ class DocumentResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.form
@@ -365,7 +366,7 @@ class GenerateTokenResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -395,7 +396,7 @@ class GetTokenDeadlines(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
             
             deadlines = json_serialize(db.get_token_deadlines())
@@ -415,7 +416,7 @@ class DeleteTokenResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -440,7 +441,7 @@ class DeleteUserResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -465,7 +466,7 @@ class CreateSummaryTokenResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -496,7 +497,7 @@ class UpdateTokenValidUntilResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -526,7 +527,7 @@ class UpdateDocumentAttachmentStatusResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -549,7 +550,7 @@ class AverageTimeForAllUsersResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             user_average_times_dt = db.calculate_average_time_for_all_users()
@@ -575,7 +576,7 @@ class RenameUsersResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -615,7 +616,7 @@ def convert_datetimes_to_strings(data_func):
     def wrapper(*args, **kwargs):
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             # Retrieve data using the original function
@@ -690,7 +691,7 @@ class UpdateUserExpiryDateResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -716,7 +717,7 @@ class SetAllUsersExpiryDateResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -744,7 +745,7 @@ class SetOneAttachmentExpiryDateResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -778,7 +779,7 @@ class SetAllAttachmentsExpiryDateResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -813,7 +814,7 @@ class CheckTokenValidityResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
@@ -852,7 +853,7 @@ class AddRedirectsResource(Resource):
         """
         try:
             auth_key = request.headers.get('Authorization')
-            if auth_key != apikey:
+            if not secrets.compare_digest(str(auth_key), str(apikey)):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data = request.get_json()
