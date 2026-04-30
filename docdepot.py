@@ -14,6 +14,7 @@ import json
 from functools import wraps
 import hashlib
 import secrets
+from werkzeug.utils import secure_filename
 from helper import *
 
 # Define directories and create them if they don't exist
@@ -148,7 +149,8 @@ class AttachmentResource(Resource):
             db.add_event(document_token, event = 'upload_attempt')
 
             # load file
-            loaded_file = FileLoader(file, filename=file.filename).load()
+            secure_filename = secure_filename(file.filename)
+            loaded_file = FileLoader(file, filename=secure_filename).load()
             print(loaded_file.attributes)
             
             # Check file size
@@ -317,7 +319,7 @@ class DocumentResource(Resource):
             
             dbdata = {
                 'title': data.get('title'),
-                'filename': data.get('filename'),
+                'filename': secure_filename(data.get('filename')),
                 'user_uid': data.get('user_uid'),
                 'checksum' : data.get('checksum', None),
                 'allow_attachment' : data.get('allow_attachment') == 'True',
