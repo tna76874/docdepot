@@ -1113,7 +1113,7 @@ def handle_error(error):
     Returns:
     - JSON response with error information.
     """
-    return jsonify({"error": str(error)}), 500
+    return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
