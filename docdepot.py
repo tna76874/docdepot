@@ -142,7 +142,7 @@ class AttachmentResource(Resource):
             # check if file is uploaded
             if not file.filename:
                 performed_checks.add_check("Dateiname")
-                erformed_checks.update_last(passed = False, description="Kein Dateiname enthalten")
+                performed_checks.update_last(passed = False, description="Kein Dateiname enthalten")
                 return performed_checks.get_checks(), 400
             
             # log the click of the upload button
