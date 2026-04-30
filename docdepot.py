@@ -767,7 +767,7 @@ class SetOneAttachmentExpiryDateResource(Resource):
 
             return {"message": f"successfully set deadline for token."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "Error"}, 500
         
 class SetAllAttachmentsExpiryDateResource(Resource):
     def put(self):
@@ -793,7 +793,7 @@ class SetAllAttachmentsExpiryDateResource(Resource):
 
             return {"message": f"successfully set deadlines."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "Error"}, 500
         
 class CheckTokenValidityResource(Resource):
     def post(self):
@@ -827,7 +827,7 @@ class CheckTokenValidityResource(Resource):
 
             return {"token_validity_dict": token_validity_dict}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "Error"}, 500
 
 class AddRedirectsResource(Resource):
     def post(self):
@@ -866,7 +866,7 @@ class AddRedirectsResource(Resource):
 
             return {"message": "Redirects added or updated successfully."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "Error"}, 500
         
 
 # Add routes to the API
@@ -924,7 +924,7 @@ def handle_redirect(token):
         else:
             return redirect(url_for('empty_page'))
     except Exception as e:
-        return {"error": str(e)}, 500
+        return {"error": "Error"}, 500
 
 @app.route('/document/<token>')
 def get_documents(token):
@@ -953,7 +953,7 @@ def get_documents(token):
         else:
             return render_template('main.html', page_name='document', document_found=False, html_settings=html_settings)
     except Exception as e:
-        return {"error": str(e)}, 500
+        return {"error": "Error"}, 500
 
 @app.route('/submission/<aid>')
 def view_attachment(aid):
@@ -979,7 +979,7 @@ def view_attachment(aid):
         else:
             return render_template('main.html', page_name='document', document_found=False, html_settings=html_settings)
     except Exception as e:
-        return {"error": str(e)}, 500
+        return {"error": "Error"}, 500
 
 @app.route('/validate/<token>')
 def validate_submission(token):
@@ -1001,7 +1001,7 @@ def validate_submission(token):
             return {"error": "Anhang nicht gefunden"}, 500
         return {"error": "Validierungscode ungültig"}, 500
     except Exception as e:
-        return {"error": str(e)}, 500
+        return {"error": "Error"}, 500
 
 @app.route('/<token>')
 def render_index(token):
@@ -1057,7 +1057,7 @@ def render_index(token):
         else:
             return render_template('main.html', page_name='document', document_found=False, html_settings=html_settings)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error"}), 500
     
 @app.route('/s/<summarytoken>')
 def render_summary(summarytoken):
@@ -1086,7 +1086,7 @@ def render_summary(summarytoken):
         else:
             return redirect(url_for('empty_page'))
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error"}), 500
 
 
 @app.route('/favicon.ico')
