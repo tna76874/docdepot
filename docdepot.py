@@ -149,8 +149,8 @@ class AttachmentResource(Resource):
             db.add_event(document_token, event = 'upload_attempt')
 
             # load file
-            secure_filename = secure_filename(file.filename)
-            loaded_file = FileLoader(file, filename=secure_filename).load()
+            safe_filename = secure_filename(file.filename)
+            loaded_file = FileLoader(file, filename=safe_filename).load()
             print(loaded_file.attributes)
             
             # Check file size
