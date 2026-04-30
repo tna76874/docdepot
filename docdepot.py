@@ -91,7 +91,7 @@ class AttachmentDownloadResource(Resource):
             else:
                 return {"error": "File not found"}, 500
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "Error"}, 500
 
 class AttachmentResource(Resource):
     def post(self):
@@ -282,7 +282,7 @@ class AttachmentResource(Resource):
             if gotify_error:
                 gotify_error.send(f'Exception on Attachment-Upload')
             response = {
-                "error": str(e),
+                "error": "error",
                 "status": "error"
             }
             return response, 500
@@ -349,7 +349,7 @@ class DocumentResource(Resource):
 
             return {"token": token, "did": did, "details": details}, 201
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
 
 class GenerateTokenResource(Resource):
     def post(self):
@@ -380,7 +380,7 @@ class GenerateTokenResource(Resource):
 
             return {"token": token, "details": details}, 201
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
 
 class GetTokenDeadlines(Resource):
     def get(self):
@@ -404,7 +404,7 @@ class GetTokenDeadlines(Resource):
             deadlines = json_serialize(db.get_token_deadlines())
             return {"deadlines": deadlines}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
 
 class DeleteTokenResource(Resource):
     def delete(self):
@@ -429,7 +429,7 @@ class DeleteTokenResource(Resource):
 
             return {"message": f"Token with value {token_value} deleted successfully."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
 
 class DeleteUserResource(Resource):
     def delete(self):
@@ -454,7 +454,7 @@ class DeleteUserResource(Resource):
 
             return {"message": f"User with UID {uid} deleted successfully."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
 
 class CreateSummaryTokenResource(Resource):
     def post(self):
@@ -484,7 +484,7 @@ class CreateSummaryTokenResource(Resource):
                 return {"error": "sid is required in the request body."}, 400
 
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
 
 class UpdateTokenValidUntilResource(Resource):
     def put(self):
@@ -511,7 +511,7 @@ class UpdateTokenValidUntilResource(Resource):
 
             return {"message": f"Token with value {token_value} updated successfully."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
         
 class UpdateDocumentAttachmentStatusResource(Resource):
     def put(self):
@@ -540,7 +540,7 @@ class UpdateDocumentAttachmentStatusResource(Resource):
 
             return {"message": "Document attachment status updated successfully."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
 
 class AverageTimeForAllUsersResource(Resource):
     def get(self):
@@ -560,7 +560,7 @@ class AverageTimeForAllUsersResource(Resource):
 
             return user_average_times_seconds, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
         
 class RenameUsersResource(Resource):
     def post(self):
@@ -589,7 +589,7 @@ class RenameUsersResource(Resource):
 
             return {"message": "Users renamed successfully."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
         
 class DDClientVersionResource(Resource):
     def get(self):
@@ -602,7 +602,7 @@ class DDClientVersionResource(Resource):
         try:
             return {"version": ddclient.__version__}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
         
 def convert_datetimes_to_strings(data_func):
     """
@@ -632,7 +632,7 @@ def convert_datetimes_to_strings(data_func):
 
             return data if data else {"message": f"No {data_func.__name__} found."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
 
     return wrapper
 
@@ -705,7 +705,7 @@ class UpdateUserExpiryDateResource(Resource):
 
             return {"message": f"User with UID {user_uid} updated successfully."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
 
 class SetAllUsersExpiryDateResource(Resource):
     def put(self):
@@ -730,7 +730,7 @@ class SetAllUsersExpiryDateResource(Resource):
 
             return {"message": f"All users' expiry date set to {valid_until} successfully."}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "error"}, 500
         
 
 
