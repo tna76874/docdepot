@@ -1224,7 +1224,7 @@ def debug():
     if not env_vars.enable_debug_mode:
         abort(404)
     return {
-        "ip": get_remote_address,
+        "ip": get_remote_address(),
         "header": dict(request.headers)
     }
 
