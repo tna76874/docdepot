@@ -6,6 +6,8 @@ Depose Files: A simple file deposition API using Flask.
 
 from flask import Flask, jsonify, send_file, render_template, request, url_for, redirect, send_from_directory
 from flask_restful import Api, Resource
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import os
 from docdepotdb import *
 import ddclient
@@ -15,6 +17,10 @@ from functools import wraps
 import hashlib
 import secrets
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import TooManyRequests
+from werkzeug.middleware.proxy_fix import ProxyFix
+from time import time
+from collections import defaultdict
 from helper import *
 
 # Define directories and create them if they don't exist
@@ -59,11 +65,128 @@ if env_vars.cleanup_db_on_start:
     db._delete_duplicates_from_attachments()
     db._db_migration()
 
-# Initialize Flask app and API
+# Initialize Flask app and API and limiter
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 api = Api(app)
 
+def rate_limit_key():
+    auth = request.headers.get("Authorization")
+    if auth == apikey:
+        return f"auth:{hashlib.sha256(auth.encode()).hexdigest()}"
+    return f"ip:{get_remote_address()}"
+
+limiter = Limiter(
+    rate_limit_key,
+    app=app,
+    default_limits=[env_vars.rate_limit_read, env_vars.rate_limit_hour]
+)
+
+# Anti-Brute Force       
+class BruteForceGuard:
+    def __init__(self):
+        self.failures = {}
+        self.locked_until = {}
+
+        self.max_attempts = 5
+        self.base_lock_seconds = 30
+        self.max_lock_seconds = 300
+
+    def _key(self):
+        auth = request.headers.get("Authorization")
+        if auth:
+            return f"auth:{hashlib.sha256(auth.encode()).hexdigest()}"
+        return f"ip:{get_remote_address()}"
+
+    def is_locked(self):
+        key = self._key()
+        until = self.locked_until.get(key)
+        return until and until > time()
+
+    def check_lock(self):
+        if self.is_locked():
+            raise TooManyRequests("Too many failed attempts")
+
+    def register_failure(self):
+        key = self._key()
+        self.failures[key] = self.failures.get(key, 0) + 1
+
+        count = self.failures[key]
+
+        if count >= self.max_attempts:
+            lock_time = min(
+                self.base_lock_seconds * (2 ** (count - self.max_attempts)),
+                self.max_lock_seconds
+            )
+            self.locked_until[key] = time() + lock_time
+
+    def register_success(self):
+        key = self._key()
+        self.failures.pop(key, None)
+        self.locked_until.pop(key, None)
+
+
+bruteforce = BruteForceGuard()
+
+def bruteforce_protected(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+
+        # block locked clients
+        bruteforce.check_lock()
+
+        try:
+            response = f(*args, **kwargs)
+
+            # success nur bei echten 2xx responses
+            status = getattr(response, "status_code", 200)
+
+            if 200 <= status < 300:
+                bruteforce.register_success()
+
+            return response
+
+        except TooManyRequests:
+            raise
+
+        except Exception:
+            bruteforce.register_failure()
+            raise
+
+    return wrapper
+
+def api_security(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+
+        bruteforce.check_lock()
+
+        auth = request.headers.get("Authorization")
+
+        if not secrets.compare_digest(str(auth), str(apikey)):
+            bruteforce.register_failure()
+            return {"error": "Unauthorized"}, 401
+
+        try:
+            response = f(*args, **kwargs)
+
+            status = getattr(response, "status_code", 200)
+
+            if 200 <= status < 300:
+                bruteforce.register_success()
+
+            return response
+
+        except Exception:
+            bruteforce.register_failure()
+            raise
+
+    return wrapper
+
+###########################################
+
 class HealthCheck(Resource):
+    @limiter.exempt
     def get(self):
         return {'status': 'Server is running properly'}, 200
 
@@ -77,6 +200,9 @@ class AttachmentDownloadResource(Resource):
     Returns:
     - File response or redirects to index if attachment not found.
     """
+    @bruteforce_protected
+    @limiter.limit(env_vars.rate_limit_download)
+    @limiter.limit(env_vars.rate_limit_hour)
     def get(self, aid):
         try:
             auth_key = request.headers.get('Authorization')
@@ -94,6 +220,9 @@ class AttachmentDownloadResource(Resource):
             return {"error": "Error"}, 500
 
 class AttachmentResource(Resource):
+    @bruteforce_protected
+    @limiter.limit(env_vars.rate_limit_upload_attachment)
+    @limiter.limit(env_vars.rate_limit_hour)
     def post(self):
         """
         Endpoint for adding an attachment to a document.
@@ -288,6 +417,8 @@ class AttachmentResource(Resource):
             return response, 500
 
 class DocumentResource(Resource):
+    @limiter.limit(env_vars.rate_limit_upload_document)
+    @api_security
     def post(self):
         """
         Endpoint for adding a new document.
@@ -303,10 +434,6 @@ class DocumentResource(Resource):
         - did: Document ID.
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.form
             file = request.files.get('file')
 
@@ -352,6 +479,8 @@ class DocumentResource(Resource):
             return {"error": "error"}, 500
 
 class GenerateTokenResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def post(self):
         """
         Endpoint for generating a new token for a document.
@@ -367,10 +496,6 @@ class GenerateTokenResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             did = data.get('did')
 
@@ -383,6 +508,8 @@ class GenerateTokenResource(Resource):
             return {"error": "error"}, 500
 
 class GetTokenDeadlines(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def get(self):
         """
         Endpoint for retrieving deadlines for all tokens.
@@ -396,17 +523,15 @@ class GetTokenDeadlines(Resource):
             }
         }
         """
-        try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-            
+        try:           
             deadlines = json_serialize(db.get_token_deadlines())
             return {"deadlines": deadlines}, 200
         except Exception as e:
             return {"error": "error"}, 500
 
 class DeleteTokenResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def delete(self):
         """
         Endpoint for deleting a token.
@@ -417,10 +542,6 @@ class DeleteTokenResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             token_value = data.get('token_value')
 
@@ -432,6 +553,8 @@ class DeleteTokenResource(Resource):
             return {"error": "error"}, 500
 
 class DeleteUserResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def delete(self):
         """
         Endpoint for deleting a user and associated documents, tokens, and files.
@@ -442,10 +565,6 @@ class DeleteUserResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             uid = data.get('uid')
 
@@ -457,6 +576,8 @@ class DeleteUserResource(Resource):
             return {"error": "error"}, 500
 
 class CreateSummaryTokenResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def post(self):
         """
         Endpoint for getting the summary token based on 'sid'.
@@ -467,10 +588,6 @@ class CreateSummaryTokenResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             sid = data.get('sid')
 
@@ -487,6 +604,8 @@ class CreateSummaryTokenResource(Resource):
             return {"error": "error"}, 500
 
 class UpdateTokenValidUntilResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def put(self):
         """
         Endpoint for updating the 'valid_until' date of a token.
@@ -498,10 +617,6 @@ class UpdateTokenValidUntilResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             token_value = data.get('token_value')
             valid_until = data.get('valid_until')
@@ -514,6 +629,8 @@ class UpdateTokenValidUntilResource(Resource):
             return {"error": "error"}, 500
         
 class UpdateDocumentAttachmentStatusResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def put(self):
         """
         Endpoint for updating the 'allow_attachment' status of documents.
@@ -528,10 +645,6 @@ class UpdateDocumentAttachmentStatusResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             doc_status_list = data.get('doc_status_list')
 
@@ -543,6 +656,8 @@ class UpdateDocumentAttachmentStatusResource(Resource):
             return {"error": "error"}, 500
 
 class AverageTimeForAllUsersResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def get(self):
         """
         Endpoint for retrieving the average time span for each user between document upload time and the first token event.
@@ -551,10 +666,6 @@ class AverageTimeForAllUsersResource(Resource):
         - A dictionary where keys are user UIDs and values are the average time spans as timedelta objects.
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             user_average_times_dt = db.calculate_average_time_for_all_users()
             user_average_times_seconds = {user: time.total_seconds() if time is not None else None for user, time in user_average_times_dt.items()}
 
@@ -563,6 +674,8 @@ class AverageTimeForAllUsersResource(Resource):
             return {"error": "error"}, 500
         
 class RenameUsersResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def post(self):
         """
         Endpoint for renaming users.
@@ -577,10 +690,6 @@ class RenameUsersResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             user_dict = data.get('user_dict')
 
@@ -617,10 +726,6 @@ def convert_datetimes_to_strings(data_func):
     @wraps(data_func)
     def wrapper(*args, **kwargs):
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             # Retrieve data using the original function
             data = data_func(*args, **kwargs)
 
@@ -637,6 +742,8 @@ def convert_datetimes_to_strings(data_func):
     return wrapper
 
 class GetAttachmentListResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     @convert_datetimes_to_strings
     def get(self):
         """
@@ -648,6 +755,8 @@ class GetAttachmentListResource(Resource):
         return db.get_all_attachments()
 
 class GetEventsResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     @convert_datetimes_to_strings
     def get(self):
         """
@@ -659,6 +768,8 @@ class GetEventsResource(Resource):
         return db.get_events()
 
 class GetDocumentsResource(Resource):
+    @limiter.limit(env_vars.rate_limit_read)
+    @api_security
     @convert_datetimes_to_strings
     def get(self):
         """
@@ -670,6 +781,8 @@ class GetDocumentsResource(Resource):
         return db.get_documents()
 
 class GetUsersResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     @convert_datetimes_to_strings
     def get(self):
         """
@@ -681,6 +794,8 @@ class GetUsersResource(Resource):
         return db.get_users()
     
 class UpdateUserExpiryDateResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def put(self):
         """
         Endpoint for updating the 'valid_until' date of a user.
@@ -692,10 +807,6 @@ class UpdateUserExpiryDateResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             user_uid = data.get('user_uid')
             valid_until = data.get('valid_until')
@@ -708,6 +819,8 @@ class UpdateUserExpiryDateResource(Resource):
             return {"error": "error"}, 500
 
 class SetAllUsersExpiryDateResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def put(self):
         """
         Endpoint for setting the 'valid_until' date for all users.
@@ -718,10 +831,6 @@ class SetAllUsersExpiryDateResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             valid_until = data.get('valid_until')
 
@@ -731,10 +840,11 @@ class SetAllUsersExpiryDateResource(Resource):
             return {"message": f"All users' expiry date set to {valid_until} successfully."}, 200
         except Exception as e:
             return {"error": "error"}, 500
-        
 
 
 class SetOneAttachmentExpiryDateResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def put(self):
         """
         Endpoint for setting the 'allow_until' date for one tokens.
@@ -746,10 +856,6 @@ class SetOneAttachmentExpiryDateResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             valid_until = data.get('expires')
             token = data.get('token')
@@ -770,6 +876,8 @@ class SetOneAttachmentExpiryDateResource(Resource):
             return {"error": "Error"}, 500
         
 class SetAllAttachmentsExpiryDateResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def put(self):
         """
         Endpoint for setting the 'allow_until' date for all tokens.
@@ -780,10 +888,6 @@ class SetAllAttachmentsExpiryDateResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             valid_until = data.get('expires')
             if not valid_until:
@@ -796,6 +900,8 @@ class SetAllAttachmentsExpiryDateResource(Resource):
             return {"error": "Error"}, 500
         
 class CheckTokenValidityResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def post(self):
         """
         Endpoint for checking the validity of a list of tokens.
@@ -815,10 +921,6 @@ class CheckTokenValidityResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             token_list = data.get('token_list')
 
@@ -830,6 +932,8 @@ class CheckTokenValidityResource(Resource):
             return {"error": "Error"}, 500
 
 class AddRedirectsResource(Resource):
+    @limiter.limit(env_vars.rate_limit_admin)
+    @api_security
     def post(self):
         """
         Endpoint for adding or updating redirects.
@@ -854,10 +958,6 @@ class AddRedirectsResource(Resource):
         }
         """
         try:
-            auth_key = request.headers.get('Authorization')
-            if not secrets.compare_digest(str(auth_key), str(apikey)):
-                return jsonify({"error": "Unauthorized"}), 401
-
             data = request.get_json()
             redirect_list = data.get('redirect_list')
 
@@ -897,6 +997,7 @@ api.add_resource(AddRedirectsResource, '/api/add_redirects')
 
 
 @app.route('/r/<token>')
+@limiter.limit(env_vars.rate_limit_redirect)
 def handle_redirect(token):
     """
     Handle redirects based on the provided token.
@@ -927,6 +1028,9 @@ def handle_redirect(token):
         return {"error": "Error"}, 500
 
 @app.route('/document/<token>')
+@bruteforce_protected
+@limiter.limit(env_vars.rate_limit_download)
+@limiter.limit(env_vars.rate_limit_hour)
 def get_documents(token):
     """
     Retrieve and serve the requested document.
@@ -1114,6 +1218,15 @@ def handle_error(error):
     - JSON response with error information.
     """
     return jsonify({"error": "Internal Server Error"}), 500
+
+@app.route("/debug")
+def debug():
+    if not env_vars.enable_debug_mode:
+        abort(404)
+    return {
+        "ip": get_remote_address,
+        "header": dict(request.headers)
+    }
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)

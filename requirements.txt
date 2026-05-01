@@ -1,5 +1,6 @@
 flask_restful==0.3.10
 Flask==3.0.0
+Flask-Limiter==3.11.0
 gunicorn==21.2.0
 Jinja2==3.1.2
 MarkupSafe==2.1.3

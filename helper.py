@@ -9,6 +9,7 @@ import hashlib
 from PIL import Image
 from classify import *
 import json
+import warnings
 
 from cryptography.fernet import Fernet
 from datetime import datetime, timedelta
@@ -431,6 +432,16 @@ class EnvironmentConfigProvider:
         self.default_redirect = os.environ.get("DOCDEPOT_DEFAULT_REDIRECT", None)
         self.grace_minutes = os.environ.get("DOCDEPOT_GRACE_MINUTES", 0)
         self.fernet_key = os.environ.get("DOCDEPOT_FERNET_KEY")
+
+        if not self.fernet_key:
+            self.fernet_key = Fernet.generate_key().decode()
+
+            warnings.warn(
+                "DOCDEPOT_FERNET_KEY is not set. "
+                "A temporary Fernet key was generated. "
+                "DO NOT use this in production!",
+                RuntimeWarning
+            )
         
         if CryptCheckSum._validate_fernet_key(self.fernet_key)==False:
             raise ValueError("Invalid Fernet key")
@@ -458,6 +469,19 @@ class EnvironmentConfigProvider:
         self.classify_model_threshold = float(self._read_var('DOCDEPOT_MODEL_THRESHOLD') or 0.55)
 
         self.blur_threshold = float(self._read_var('DOCDEPOT_BLUR_THRESHOLD') or 40)
+
+        # RATE LIMITS (DOCDEPOT)
+        self.rate_limit_upload_attachment = os.environ.get("DOCDEPOT_LIMIT_UPLOAD_ATTACHMENT", "5 per minute")
+        self.rate_limit_upload_document = os.environ.get("DOCDEPOT_LIMIT_UPLOAD_DOCUMENT", "100 per minute")
+        self.rate_limit_download = os.environ.get("DOCDEPOT_LIMIT_DOWNLOAD", "60 per minute")
+        self.rate_limit_admin = os.environ.get("DOCDEPOT_LIMIT_ADMIN", "100 per minute")
+        self.rate_limit_read = os.environ.get("DOCDEPOT_LIMIT_READ", "60 per minute")
+        self.rate_limit_redirect = os.environ.get("DOCDEPOT_LIMIT_REDIRECT", "120 per minute")
+        self.rate_limit_hour = os.environ.get("DOCDEPOT_LIMIT_HOUR", "150 per hour")
+
+        # DEBUG
+        self.enable_debug_mode = os.environ.get("DOCDEPOT_DEBUG_MODE", "False").lower() == "true"
+
 
     def get_grace_minutes(self):
         try:
