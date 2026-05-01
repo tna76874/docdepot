@@ -1222,7 +1222,7 @@ def handle_error(error):
 @app.route("/debug")
 def debug():
     if not env_vars.enable_debug_mode:
-        abort(404)
+        return redirect(url_for('disclaimer'))
     return {
         "ip": get_remote_address(),
         "header": dict(request.headers)
